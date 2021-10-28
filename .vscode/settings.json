@@ -1,0 +1,8 @@
+{
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "files.associations": {
+    "stdbool.h": "c",
+    "stdio.h": "c"
+  }
+}
