@@ -30,7 +30,7 @@ int main() {
   printf("Our menu:\n"
          "*********\n"
          "Basic pizza: %.2f NIS for %dx%d size pizza\n",
-         (float)basicPizzaPrice, basicPizzaLength, basicPizzaWidth, );
+         (float)basicPizzaPrice, basicPizzaLength, basicPizzaWidth);
 
   printf("Toppings for basic size pizza:\n"
          "Olives: %d NIS\n"
