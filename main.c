@@ -147,16 +147,16 @@ int main() {
     // calculateDoughPrice
     switch (pizza.doughType) {
       case 'r':
-        doughPrice = doughTypeRegularPrice;
+        doughPrice = pizza.relativeSize * doughTypeRegularPrice;
         break;
       case 'v':
-        doughPrice = doughTypeVeganPrice;
+        doughPrice = pizza.relativeSize * doughTypeVeganPrice;
         break;
       case 'w':
-        doughPrice = doughTypeWholeWheatPrice;
+        doughPrice = pizza.relativeSize * doughTypeWholeWheatPrice;
         break;
       case 'f':
-        doughPrice = doughTypeGlutenFreePrice;
+        doughPrice = pizza.relativeSize * doughTypeGlutenFreePrice;
         break;
       default:
         printf("Error. Input doesn't match any available dough types. Please try again.");
@@ -168,7 +168,7 @@ int main() {
                                                 (toppingMushroomsPrice * pizza.toppingMushroomsPortion));
 
     // calculatePizzaPrice - calculateTotalPizzaPrice
-    totalPizzaPrice = pizzaPriceByPizzaSize + toppingsPrice;
+    totalPizzaPrice = pizzaPriceByPizzaSize + doughPrice + toppingsPrice;
     totalPrice += totalPizzaPrice;
 
     // printPizzaSummary
