@@ -207,15 +207,16 @@ int main() {
   scanf("%d", &isDelivery);
 
   // validateDeliveryType
-  if (isDelivery != 0 || isDelivery != 1) {
-    printf("Invalid choice! Pick-up was chosen as a default.");
+  if (!(isDelivery == 0 || isDelivery == 1)) {
+    printf("Invalid choice! Pick-up was chosen as a default.\n");
+    isDelivery = 0;
   }
 
   // calculateTotalPrice - calculateDeliveryPrice
   int deliveryPrice = isDelivery * basicDeliveryPrice;
 
   // calculateTotalPrice - calculateTotalPrice
-  totalPrice += isDelivery * deliveryPrice;
+  totalPrice += deliveryPrice;
   float totalPriceIncludingVAT = totalPrice * 1.17;
 
   // printOrderSummaryForId
