@@ -68,8 +68,7 @@ int main() {
     int pizzaNumber = i + 1;
     struct Pizza pizza;
 
-    int doughPrice;
-    float totalPizzaPrice = 0;
+    float doughPrice, totalPizzaPrice = 0;
 
     // printHeader
     printf("*************************************************\n"
@@ -82,7 +81,7 @@ int main() {
 
     // TODO Validation to be done by functions with better names when allowed
     // validatePizzaLength - Validate allowed range in 'cm', validate if even
-    if (!(pizza.length > 10 && pizza.length < 40) || pizza.length % 2 != 0) {
+    if (!(pizza.length >= 10 && pizza.length <= 40) || pizza.length % 2 != 0) {
       printf("Invalid length! Basic length was chosen as a default.\n");
       pizza.length = basicPizzaLength;
     }
@@ -93,7 +92,7 @@ int main() {
 
     // TODO Validation to be done by functions with better names when allowed
     // validatePizzaWidth - Validate allowed range in 'cm', validate if even
-    if (!(pizza.width > 10 && pizza.width < 80) || pizza.width % 2 != 0) {
+    if (!(pizza.width >= 10 && pizza.width <= 80) || pizza.width % 2 != 0) {
       printf("Invalid width! Basic width was chosen as a default.\n");
       pizza.width = basicPizzaWidth;
     }
@@ -229,7 +228,7 @@ int main() {
          totalPrice, (int)totalPriceIncludingVAT);
 
   // getPaymentInCashFromInput
-  printf("Please enter your payment: ");
+  printf("Please enter your payment:\n");
   scanf("%d", &customerPaymentAmountInNIS);
 
   // calculatePaymentChange
@@ -265,16 +264,16 @@ int main() {
   if (paymentChange > 0) {
     printf("Your change is %d NIS using:\n", paymentChange);
     if (remainingChangeInTens > 0) {
-      printf("%d coins(s) of ten\n", remainingChangeInTens);
+      printf("%d coin(s) of ten\n", remainingChangeInTens);
     }
     if (remainingChangeInFives > 0) {
-      printf("%d coins(s) of five\n", remainingChangeInFives);
+      printf("%d coin(s) of five\n", remainingChangeInFives);
     }
     if (remainingChangeInTwos > 0) {
-      printf("%d coins(s) of two\n", remainingChangeInTwos);
+      printf("%d coin(s) of two\n", remainingChangeInTwos);
     }
     if (remainingChangeInOnes > 0) {
-      printf("%d coins(s) of one\n", remainingChangeInOnes);
+      printf("%d coin(s) of one\n", remainingChangeInOnes);
     }
   }
 
