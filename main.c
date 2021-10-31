@@ -22,8 +22,13 @@ int main() {
   int pizzasAmount;
   int isDelivery;
 
+  int deliveryPrice;
+  float totalPriceIncludingVAT;
   float totalPrice = 0;
+
   int customerPaymentAmountInNIS;
+  int paymentChange, remainingChange, remainingChangeInTens, remainingChangeInFives, remainingChangeInTwos,
+      remainingChangeInOnes;
 
   // printWelcomeMessage
   printf(" Welcome to MTA-Pizza!\n"
@@ -67,8 +72,12 @@ int main() {
   for (int i = 0; i < pizzasAmount; i++) {
     int pizzaNumber = i + 1;
     struct Pizza pizza;
+    int tempToppingOlivesPortion, tempToppingMushroomsPortion;
 
-    float doughPrice, totalPizzaPrice = 0;
+    bool oneOfToppingsIsNone;
+    float sumOfToppingsPortions;
+
+    float pizzaPriceByPizzaSize, doughPrice, toppingsPrice, totalPizzaPrice = 0;
 
     // printHeader
     printf("*************************************************\n"
@@ -124,6 +133,7 @@ int main() {
            "2. Half pizza\n"
            "3. Quarter pizza\n");
     scanf("%f", &pizza.toppingOlivesPortion);
+    tempToppingOlivesPortion = pizza.toppingOlivesPortion;
 
     // chooseToppings - validateToppings
     if (!(pizza.toppingOlivesPortion >= 0 && pizza.toppingOlivesPortion <= 3)) {
@@ -138,6 +148,7 @@ int main() {
            "2. Half pizza\n"
            "3. Quarter pizza\n");
     scanf("%f", &pizza.toppingMushroomsPortion);
+    tempToppingMushroomsPortion = pizza.toppingMushroomsPortion;
 
     // chooseToppings - validateToppings
     if (!(pizza.toppingMushroomsPortion >= 0 && pizza.toppingMushroomsPortion <= 3)) {
@@ -145,23 +156,56 @@ int main() {
       pizza.toppingMushroomsPortion = 0;
     }
 
+    // mapToppingsToValues
+    switch (tempToppingOlivesPortion) {
+      case 0:
+        pizza.toppingOlivesPortion = 0;
+        break;
+      case 1:
+        pizza.toppingOlivesPortion = 1;
+        break;
+      case 2:
+        pizza.toppingOlivesPortion = 0.5;
+        break;
+      case 3:
+        pizza.toppingOlivesPortion = 0.25;
+        break;
+      default:
+        return -1;
+    }
+
+    // mapToppingsToValues
+    switch (tempToppingMushroomsPortion) {
+      case 0:
+        pizza.toppingMushroomsPortion = 0;
+        break;
+      case 1:
+        pizza.toppingMushroomsPortion = 1;
+        break;
+      case 2:
+        pizza.toppingMushroomsPortion = 0.5;
+        break;
+      case 3:
+        pizza.toppingMushroomsPortion = 0.25;
+        break;
+      default:
+        return -1;
+    }
+
     // validateToppingOverflow
-    bool oneOfToppingsIsNone = (pizza.toppingOlivesPortion == 0 || pizza.toppingMushroomsPortion == 0);
-    bool oneOfToppingsIsWholePizza = (pizza.toppingOlivesPortion == 1 || pizza.toppingMushroomsPortion == 1);
-    bool sumOfToppingsPortions = (pizza.toppingOlivesPortion + pizza.toppingMushroomsPortion);
+    oneOfToppingsIsNone = (pizza.toppingOlivesPortion == 0 || pizza.toppingMushroomsPortion == 0);
+    sumOfToppingsPortions = (pizza.toppingOlivesPortion + pizza.toppingMushroomsPortion);
 
     if (!oneOfToppingsIsNone) {
-      if (!(oneOfToppingsIsWholePizza && sumOfToppingsPortions == 1)) {
-        if (!(sumOfToppingsPortions >= 4 && sumOfToppingsPortions <= 6)) {
-          printf("You have exceeded the maximum amount of toppings allowed on one pizza! Current topping not added.\n");
-          pizza.toppingMushroomsPortion = 0;
-        }
+      if (sumOfToppingsPortions > 1) {
+        printf("You have exceeded the maximum amount of toppings allowed on one pizza! Current topping not added.\n");
+        pizza.toppingMushroomsPortion = 0;
       }
     }
 
     // calculatePizzaPrice
     // calculatePizzaPrice - calculatePizzaPriceByPizzaSize
-    float pizzaPriceByPizzaSize = pizza.relativeSize * basicPizzaPrice;
+    pizzaPriceByPizzaSize = pizza.relativeSize * basicPizzaPrice;
 
     // calculateDoughPrice
     switch (pizza.doughType) {
@@ -183,8 +227,8 @@ int main() {
     }
 
     // calculatePizzaPrice - calculateToppingsPrice
-    float toppingsPrice = pizza.relativeSize * ((toppingOlivesPrice * pizza.toppingOlivesPortion) +
-                                                (toppingMushroomsPrice * pizza.toppingMushroomsPortion));
+    toppingsPrice = pizza.relativeSize * ((toppingOlivesPrice * pizza.toppingOlivesPortion) +
+                                          (toppingMushroomsPrice * pizza.toppingMushroomsPortion));
 
     // calculatePizzaPrice - calculateTotalPizzaPrice
     totalPizzaPrice = pizzaPriceByPizzaSize + doughPrice + toppingsPrice;
@@ -212,11 +256,11 @@ int main() {
   }
 
   // calculateTotalPrice - calculateDeliveryPrice
-  int deliveryPrice = isDelivery * basicDeliveryPrice;
+  deliveryPrice = isDelivery * basicDeliveryPrice;
 
   // calculateTotalPrice - calculateTotalPrice
   totalPrice += deliveryPrice;
-  float totalPriceIncludingVAT = totalPrice * 1.17;
+  totalPriceIncludingVAT = totalPrice * 1.17;
 
   // printOrderSummaryForId
   printf("Your order details:\n"
@@ -232,7 +276,7 @@ int main() {
   scanf("%d", &customerPaymentAmountInNIS);
 
   // calculatePaymentChange
-  int paymentChange = customerPaymentAmountInNIS - (int)totalPriceIncludingVAT;
+  paymentChange = customerPaymentAmountInNIS - (int)totalPriceIncludingVAT;
 
   while (paymentChange < 0) {
     printf("Your remaining balance is: %d\n", -1 * paymentChange);
@@ -242,22 +286,22 @@ int main() {
     paymentChange += customerPaymentAmountInNIS;
   }
 
-  int remainingChange = paymentChange;
+  remainingChange = paymentChange;
 
   // calculatePaymentChange - calculateRemainingChangeInTens
-  int remainingChangeInTens = remainingChange / 10;
+  remainingChangeInTens = remainingChange / 10;
   remainingChange -= remainingChangeInTens * 10;
 
   // calculatePaymentChange - calculateRemainingChangeInFives
-  int remainingChangeInFives = remainingChange / 5;
+  remainingChangeInFives = remainingChange / 5;
   remainingChange -= remainingChangeInFives * 5;
 
   // calculatePaymentChange - calculateRemainingChangeInTwos
-  int remainingChangeInTwos = remainingChange / 2;
+  remainingChangeInTwos = remainingChange / 2;
   remainingChange -= remainingChangeInTwos * 2;
 
   // calculatePaymentChange - calculateRemainingChangeInOnes
-  int remainingChangeInOnes = remainingChange / 1;
+  remainingChangeInOnes = remainingChange / 1;
   remainingChange -= remainingChangeInOnes * 1;
 
   // printPaymentChange
