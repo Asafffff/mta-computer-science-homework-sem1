@@ -158,9 +158,6 @@ int main() {
 
     // mapToppingsToValues
     switch (tempToppingOlivesPortion) {
-      case 0:
-        pizza.toppingOlivesPortion = 0;
-        break;
       case 1:
         pizza.toppingOlivesPortion = 1;
         break;
@@ -171,14 +168,12 @@ int main() {
         pizza.toppingOlivesPortion = 0.25;
         break;
       default:
-        return -1;
+        pizza.toppingOlivesPortion = 0;
+        break;
     }
 
     // mapToppingsToValues
     switch (tempToppingMushroomsPortion) {
-      case 0:
-        pizza.toppingMushroomsPortion = 0;
-        break;
       case 1:
         pizza.toppingMushroomsPortion = 1;
         break;
@@ -189,7 +184,8 @@ int main() {
         pizza.toppingMushroomsPortion = 0.25;
         break;
       default:
-        return -1;
+        pizza.toppingMushroomsPortion = 0;
+        break;
     }
 
     // validateToppingOverflow
