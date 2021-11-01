@@ -5,7 +5,7 @@ struct Pizza {
   int length;
   int width;
   char doughType;
-  float relativeSize;
+  double relativeSize;
   float toppingOlivesPortion;
   float toppingMushroomsPortion;
 };
@@ -23,8 +23,8 @@ int main() {
   int isDelivery;
 
   int deliveryPrice;
-  float totalPriceIncludingVAT;
-  float totalPrice = 0;
+  double totalPriceIncludingVAT;
+  double totalPrice = 0;
 
   int customerPaymentAmountInNIS;
   int paymentChange, remainingChange, remainingChangeInTens, remainingChangeInFives, remainingChangeInTwos,
@@ -121,7 +121,7 @@ int main() {
     }
 
     // calculateRelativePizzaSize
-    pizza.relativeSize = ((float)pizza.length * pizza.width) / (basicPizzaLength * basicPizzaWidth);
+    pizza.relativeSize = ((double)pizza.length * pizza.width) / (basicPizzaLength * basicPizzaWidth);
 
     // chooseToppings
     printf("Please choose the toppings:\n\n");
