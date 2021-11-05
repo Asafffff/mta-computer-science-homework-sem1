@@ -8,14 +8,20 @@
 #define DELIVERY 1
 #define PICKUP 0
 
+struct ToppingPortions {
+  float olives;
+  float mushrooms;
+  float tomatoes;
+  float pineapple
+};
+
 struct Pizza {
   int number;
   int length;
   int width;
   char doughType;
   double relativeSize;
-  float toppingOlivesPortion;
-  float toppingMushroomsPortion;
+  struct ToppingPortions toppingPortions;
   double totalPrice;
 };
 
@@ -47,15 +53,15 @@ char getPizzaDoughType();
 bool isValidDoughType(char pizzaDoughType);
 double calculateRelativePizzaSize(int pizzaLength, int pizzaWidth);
 struct Pizza addToppingsToPizza(struct Pizza pizza);
-float selectOlivesToppingForPizza();
-float selectMushroomToppingForPizza();
+void printToppingSelectionMenuByToppingName(char toppingName[]);
+float selectToppingForPizza();
 bool isValidToppingPortion(float toppingPortion);
 float mapToppingPortionsToValues(float toppingPortion);
-bool isValidToppingSum(float pizzaToppingOlivesPortion, float pizzaToppingMushroomsPortion);
+bool isValidToppingSum(float sumOfToppingsPortions);
 double calculatePizzaPriceByRelativeSize(double pizzaRelativeSize);
 double calculateDoughPriceByRelativeSize(double pizzaRelativeSize, char pizzaDoughType);
-double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizzaToppingOlivesPortion,
-                                            float pizzaToppingMushroomsPortion);
+double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizzaToppingPortionsOlives,
+                                            float pizzaToppingPortionsMushrooms);
 double calculatePizzaPrice(struct Pizza pizza);
 void printPizzaSummary(struct Pizza pizza);
 int chooseDeliveryType();
@@ -73,9 +79,9 @@ void handlePayment(double totalPriceIncludingVAT);
 bool isEven(int number);
 void printSeparator();
 
-const int basicPizzaPrice = 60;
-const int basicPizzaLength = 40, basicPizzaWidth = 40;
-const int toppingOlivesPrice = 10, toppingMushroomsPrice = 12;
+const int basicPizzaPrice = 70;
+const int basicPizzaLength = 40, basicPizzaWidth = 50;
+const int toppingOlivesPrice = 10, toppingMushroomsPrice = 12, toppingTomatoesPrice = 9, toppingPineapplePrice = 14;
 const int doughTypeRegularPrice = 0, doughTypeVeganPrice = 5, doughTypeWholeWheatPrice = 3,
           doughTypeGlutenFreePrice = 4;
 const int basicDeliveryPrice = 15;
@@ -151,7 +157,7 @@ bool isValidCustomerId(int customerId) {
 }
 
 bool isValidCustomerIdLength(int customerId) {
-  return customerId >= 100000000;
+  return customerId > 0 && customerId < 100000000;
 }
 
 int hashLastDigit(int i, int customerIdLastDigit) {
@@ -208,8 +214,10 @@ void printMenu() {
 
   printf("Toppings for basic size pizza:\n"
          "Olives: %d NIS\n"
-         "Mushrooms: %d NIS\n\n",
-         toppingOlivesPrice, toppingMushroomsPrice);
+         "Mushrooms: %d NIS\n"
+         "Tomatoes: %d NIS\n"
+         "Pineapple: %d NIS\n\n",
+         toppingOlivesPrice, toppingMushroomsPrice, toppingTomatoesPrice, toppingPineapplePrice);
 
   printf("Dough type for basic size pizza:\n"
          "Regular: %d NIS\n"
@@ -317,30 +325,29 @@ double calculateRelativePizzaSize(int pizzaLength, int pizzaWidth) {
   return ((double)pizzaLength * pizzaWidth) / (basicPizzaLength * basicPizzaWidth);
 };
 
-float selectOlivesToppingForPizza() {
-  float pizzaToppingOlivesPortion;
-
-  printf("Olives (choose 0-3):\n"
+void printToppingSelectionMenuByToppingName(char toppingName[]) {
+  printf("%s (choose 0-3):\n"
          "0. None\n"
          "1. Whole pizza\n"
          "2. Half pizza\n"
-         "3. Quarter pizza\n");
-  scanf("%f", &pizzaToppingOlivesPortion);
+         "3. Quarter pizza\n",
+         toppingName);
+};
 
-  return pizzaToppingOlivesPortion;
-}
+float selectToppingForPizza(char toppingName[]) {
+  float pizzaToppingPortion;
 
-float selectMushroomToppingForPizza() {
-  float pizzaToppingMushroomPortion;
+  printToppingSelectionMenuByToppingName(toppingName);
+  scanf("%f", &pizzaToppingPortion);
 
-  printf("Mushrooms (choose 0-3):\n"
-         "0. None\n"
-         "1. Whole pizza\n"
-         "2. Half pizza\n"
-         "3. Quarter pizza\n");
-  scanf("%f", &pizzaToppingMushroomPortion);
+  while (!isValidToppingPortion(pizzaToppingPortion)) {
+    printf("Invalid choice! Try again.\n");
 
-  return pizzaToppingMushroomPortion;
+    printToppingSelectionMenuByToppingName(toppingName);
+    scanf("%f", &pizzaToppingPortion);
+  }
+
+  return pizzaToppingPortion;
 }
 
 bool isValidToppingPortion(float toppingPortion) {
@@ -368,41 +375,62 @@ float mapToppingPortionsToValues(float toppingPortion) {
   return toppingPortion;
 }
 
-bool isValidToppingSum(float pizzaToppingOlivesPortion, float pizzaToppingMushroomsPortion) {
-  float sumOfToppingsPortions = (pizzaToppingOlivesPortion + pizzaToppingMushroomsPortion);
-
+bool isValidToppingSum(float sumOfToppingsPortions) {
   return sumOfToppingsPortions <= 1;
 }
 
 struct Pizza addToppingsToPizza(struct Pizza pizza) {
+  float sumOfToppingsPortions = 0;
   printf("Please choose the toppings:\n\n");
 
-  // chooseToppings - Olives
-  pizza.toppingOlivesPortion = selectOlivesToppingForPizza();
+  // Olives
+  pizza.toppingPortions.olives = selectToppingForPizza("Olives");
+  pizza.toppingPortions.olives = mapToppingPortionsToValues(pizza.toppingPortions.olives);
+  sumOfToppingsPortions += pizza.toppingPortions.olives;
 
-  if (!isValidToppingPortion(pizza.toppingOlivesPortion)) {
-    printf("Invalid choice! Current topping not added.\n");
-    pizza.toppingOlivesPortion = 0;
+  // Mushrooms
+  pizza.toppingPortions.mushrooms = selectToppingForPizza("Mushrooms");
+  pizza.toppingPortions.mushrooms = mapToppingPortionsToValues(pizza.toppingPortions.mushrooms);
+  sumOfToppingsPortions += pizza.toppingPortions.mushrooms;
+
+  // Validate Topping Overflow
+  while (!isValidToppingSum(sumOfToppingsPortions)) {
+    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
+    sumOfToppingsPortions -= pizza.toppingPortions.mushrooms;
+
+    pizza.toppingPortions.mushrooms = selectToppingForPizza("Mushrooms");
+    pizza.toppingPortions.mushrooms = mapToppingPortionsToValues(pizza.toppingPortions.mushrooms);
+    sumOfToppingsPortions += pizza.toppingPortions.mushrooms;
   }
 
-  // chooseToppings - Olives - mapToppingPortionsToValues
-  pizza.toppingOlivesPortion = mapToppingPortionsToValues(pizza.toppingOlivesPortion);
+  // Tomatoes
+  pizza.toppingPortions.tomatoes = selectToppingForPizza("Tomatoes");
+  pizza.toppingPortions.tomatoes = mapToppingPortionsToValues(pizza.toppingPortions.tomatoes);
+  sumOfToppingsPortions += pizza.toppingPortions.tomatoes;
 
-  // chooseToppings - Mushroom
-  pizza.toppingMushroomsPortion = selectMushroomToppingForPizza();
+  // Validate Topping Overflow
+  while (!isValidToppingSum(sumOfToppingsPortions)) {
+    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
+    sumOfToppingsPortions -= pizza.toppingPortions.tomatoes;
 
-  if (!isValidToppingPortion(pizza.toppingMushroomsPortion)) {
-    printf("Invalid choice! Current topping not added.\n");
-    pizza.toppingMushroomsPortion = 0;
+    pizza.toppingPortions.tomatoes = selectToppingForPizza("Tomatoes");
+    pizza.toppingPortions.tomatoes = mapToppingPortionsToValues(pizza.toppingPortions.tomatoes);
+    sumOfToppingsPortions += pizza.toppingPortions.tomatoes;
   }
 
-  // chooseToppings - Mushroom - mapToppingPortionsToValues
-  pizza.toppingMushroomsPortion = mapToppingPortionsToValues(pizza.toppingMushroomsPortion);
+  // Pineapple
+  pizza.toppingPortions.pineapple = selectToppingForPizza("Pineapple");
+  pizza.toppingPortions.pineapple = mapToppingPortionsToValues(pizza.toppingPortions.pineapple);
+  sumOfToppingsPortions += pizza.toppingPortions.pineapple;
 
-  // validateToppingOverflow
-  if (!isValidToppingSum(pizza.toppingOlivesPortion, pizza.toppingMushroomsPortion)) {
-    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Current topping not added.\n");
-    pizza.toppingMushroomsPortion = 0;
+  // Validate Topping Overflow
+  while (!isValidToppingSum(sumOfToppingsPortions)) {
+    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
+    sumOfToppingsPortions -= pizza.toppingPortions.pineapple;
+
+    pizza.toppingPortions.pineapple = selectToppingForPizza("Pineapple");
+    pizza.toppingPortions.pineapple = mapToppingPortionsToValues(pizza.toppingPortions.pineapple);
+    sumOfToppingsPortions += pizza.toppingPortions.pineapple;
   }
 
   return pizza;
@@ -436,10 +464,10 @@ double calculateDoughPriceByRelativeSize(double pizzaRelativeSize, char pizzaDou
   return doughPrice;
 }
 
-double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizzaToppingOlivesPortion,
-                                            float pizzaToppingMushroomsPortion) {
+double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizzaToppingPortionsOlives,
+                                            float pizzaToppingPortionsMushrooms) {
   return pizzaRelativeSize *
-         ((toppingOlivesPrice * pizzaToppingOlivesPortion) + (toppingMushroomsPrice * pizzaToppingMushroomsPortion));
+         ((toppingOlivesPrice * pizzaToppingPortionsOlives) + (toppingMushroomsPrice * pizzaToppingPortionsMushrooms));
 };
 
 double calculatePizzaPrice(struct Pizza pizza) {
@@ -447,8 +475,8 @@ double calculatePizzaPrice(struct Pizza pizza) {
 
   pizzaPriceByPizzaSize = calculatePizzaPriceByRelativeSize(pizza.relativeSize);
   doughPrice = calculateDoughPriceByRelativeSize(pizza.relativeSize, pizza.doughType);
-  toppingsPrice = calculateToppingsPriceByRelativeSize(pizza.relativeSize, pizza.toppingOlivesPortion,
-                                                       pizza.toppingMushroomsPortion);
+  toppingsPrice = calculateToppingsPriceByRelativeSize(pizza.relativeSize, pizza.toppingPortions.olives,
+                                                       pizza.toppingPortions.mushrooms);
 
   totalPizzaPrice = pizzaPriceByPizzaSize + doughPrice + toppingsPrice;
 
