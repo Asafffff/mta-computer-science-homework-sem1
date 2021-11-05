@@ -29,7 +29,11 @@ struct PaymentChange {
 
 void printWelcomeMessage();
 int getCustomerIdFromInput();
-bool isValidCustomerId();
+bool isValidCustomerId(int customerId);
+bool isValidCustomerIdLength(int customerId);
+int hashLastDigit(int i, int lastDigit);
+int calculateCheckDigit(int input);
+bool isValidCustomerIdCheckDigit(int customerId);
 void printMenu();
 int getPizzasAmountFromInput();
 bool isValidPizzasAmount();
@@ -141,6 +145,60 @@ int getCustomerIdFromInput() {
 
   return customerId;
 };
+
+bool isValidCustomerId(int customerId) {
+  return isValidCustomerIdLength(customerId) && isValidCustomerIdCheckDigit(customerId);
+}
+
+bool isValidCustomerIdLength(int customerId) {
+  return customerId >= 100000000;
+}
+
+int hashLastDigit(int i, int customerIdLastDigit) {
+  int hashResult;
+  bool isMultiplyByTwo = (i % 2) == 0;
+
+  hashResult = isMultiplyByTwo ? customerIdLastDigit * 2 : customerIdLastDigit;
+
+  if (hashResult > 9) {
+    int hashResultSumOfDigits, hashResultFirstDigit, hashResultLastDigit;
+
+    hashResultFirstDigit = hashResult / 10;
+    hashResultLastDigit = hashResult % 10;
+    return (hashResultFirstDigit + hashResultLastDigit);
+  }
+
+  return hashResult;
+}
+
+int calculateCheckDigit(int hashResultSum) {
+  return (hashResultSum % 10) == 0 ? 0 : (-1) * ((hashResultSum % 10) - 10);
+}
+
+bool isValidCustomerIdCheckDigit(int customerId) {
+  int customerIdWithoutCheckDigit = customerId / 10;
+  int calculatedCheckDigit, checkDigit = customerId % 10;
+  int customerIdRemainingDigits = customerIdWithoutCheckDigit;
+  int customerIdLastDigit;
+  int hashResultSum = 0;
+  int i = 0;
+
+  while (customerIdRemainingDigits > 0) {
+    int hashResult;
+
+    customerIdLastDigit = customerIdRemainingDigits % 10;
+
+    hashResult = hashLastDigit(i, customerIdLastDigit);
+    hashResultSum += hashResult;
+
+    customerIdRemainingDigits /= 10;
+    i++;
+  }
+
+  calculatedCheckDigit = calculateCheckDigit(hashResultSum);
+
+  return (calculatedCheckDigit == checkDigit);
+}
 
 void printMenu() {
   printf("Our menu:\n"
