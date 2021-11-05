@@ -92,10 +92,6 @@ int main() {
   printMenu();
 
   pizzasAmount = getPizzasAmountFromInput();
-  if (!isValidPizzasAmount(pizzasAmount)) {
-    printf("Thank you and goodbye.");
-    exit(EXIT_SUCCESS);
-  }
 
   // Build pizzas
   for (int i = 0; i < pizzasAmount; i++) {
@@ -171,6 +167,13 @@ int getPizzasAmountFromInput() {
   printf("How many pizzas would you like to order?\n");
   scanf("%d", &pizzasAmount);
 
+  while (!isValidPizzasAmount(pizzasAmount)) {
+    printf("Invalid choice! Try again.\n");
+
+    printf("How many pizzas would you like to order?\n");
+    scanf("%d", &pizzasAmount);
+  }
+
   return pizzasAmount;
 };
 
@@ -190,6 +193,13 @@ int getPizzaLengthFromInput() {
   printf("Please enter your pizza's length (cm):\n");
   scanf("%d", &pizzaLength);
 
+  while (!isValidPizzaLength(pizzaLength)) {
+    printf("Invalid length! Try again.\n");
+
+    printf("Please enter your pizza's length (cm):\n");
+    scanf("%d", &pizzaLength);
+  }
+
   return pizzaLength;
 };
 
@@ -198,6 +208,13 @@ int getPizzaWidthFromInput() {
 
   printf("Please enter your pizza's width (cm):\n");
   scanf("%d", &pizzaWidth);
+
+  while (!isValidPizzaWidth(pizzaWidth)) {
+    printf("Invalid width! Try again.\n");
+
+    printf("Please enter your pizza's width (cm):\n");
+    scanf("%d", &pizzaWidth);
+  }
 
   return pizzaWidth;
 };
@@ -219,6 +236,17 @@ char getPizzaDoughType() {
          "w - for whole wheat\n"
          "f - for gluten-free\n");
   scanf(" %c", &pizzaDoughType);
+
+  while (!isValidDoughType(pizzaDoughType)) {
+    printf("Invalid choice! Try again.\n");
+
+    printf("Please enter the pizza's dough type:\n"
+           "r - for regular\n"
+           "v - for vegan\n"
+           "w - for whole wheat\n"
+           "f - for gluten-free\n");
+    scanf(" %c", &pizzaDoughType);
+  }
 
   return pizzaDoughType;
 };
@@ -384,22 +412,9 @@ struct Pizza buildPizza(int pizzaNumber) {
   printHeaderForPizzaNumber(pizza.number);
 
   pizza.length = getPizzaLengthFromInput();
-  if (!isValidPizzaLength(pizza.length)) {
-    printf("Invalid length! Basic length was chosen as a default.\n");
-    pizza.length = basicPizzaLength;
-  }
-
   pizza.width = getPizzaWidthFromInput();
-  if (!isValidPizzaWidth(pizza.width)) {
-    printf("Invalid width! Basic width was chosen as a default.\n");
-    pizza.width = basicPizzaWidth;
-  }
 
   pizza.doughType = getPizzaDoughType();
-  if (!isValidDoughType(pizza.doughType)) {
-    printf("Invalid choice! Regular dough was chosen as a default.\n");
-    pizza.doughType = 'r';
-  }
 
   // calculateRelativePizzaSize
   pizza.relativeSize = calculateRelativePizzaSize(pizza.length, pizza.width);
