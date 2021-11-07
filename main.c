@@ -102,7 +102,7 @@ void printPizzaPreview(struct Pizza pizza);
 int chooseDeliveryType();
 bool isValidDeliveryType(int deliveryType);
 int calculateDeliveryPriceByDeliveryType(int deliveryType);
-void printOrderSummaryForCustomerId(int customerId, int pizzasAmount, double totalPrice);
+void printOrderSummaryForCustomerId(int customerId, int pizzasAmount, int deliveryType, double totalPrice);
 
 int getPaymentInCashFromInput();
 int calculatePaymentChange(int customerPaymentAmountInNIS, double totalPriceIncludingVAT);
@@ -155,7 +155,7 @@ int main() {
   totalPrice += deliveryPrice;
   totalPriceIncludingVAT = totalPrice * 1.17;
 
-  printOrderSummaryForCustomerId(customerId, pizzasAmount, totalPrice);
+  printOrderSummaryForCustomerId(customerId, pizzasAmount, deliveryType, totalPrice);
 
   handlePayment(totalPriceIncludingVAT);
 
@@ -928,13 +928,14 @@ int calculateDeliveryPriceByDeliveryType(int deliveryType) {
   return deliveryType == DELIVERY ? basicDeliveryPrice : 0;
 };
 
-void printOrderSummaryForCustomerId(int customerId, int pizzasAmount, double totalPrice) {
+void printOrderSummaryForCustomerId(int customerId, int pizzasAmount, int deliveryType, double totalPrice) {
   double totalPriceIncludingVAT = totalPrice * 1.17;
 
   printf("Your order details:\n"
          "*******************\n");
   printf("ID number: %09d\n", customerId);
   printf("Number of pizzas: %d\n", pizzasAmount);
+  printf(deliveryType == DELIVERY ? "Delivery" : "Pickup");
   printf("Total price: %.2f\n"
          "Total price with tax (rounded down): %d\n",
          totalPrice, (int)(totalPriceIncludingVAT));
