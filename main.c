@@ -1,18 +1,51 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+/**
+ * Pizza Properties
+ */
 #define MIN_PIZZA_WIDTH 10
 #define MIN_PIZZA_LENGTH 10
 #define MAX_PIZZA_WIDTH 80
 #define MAX_PIZZA_LENGTH 40
+
+/**
+ * Delivery Options
+ */
 #define DELIVERY 1
 #define PICKUP 0
 
-struct ToppingPortions {
+/**
+ * Pizza Toppings
+ */
+#define TOPPING_OLIVES "Olives"
+#define TOPPING_MUSHROOMS "Mushrooms"
+#define TOPPING_TOMATOES "Tomatoes"
+#define TOPPING_PINEAPPLE "Pineapple"
+
+/**
+ * Pizza Toppings - Characters Symbol
+ */
+#define OLIVES_CHAR 'O'
+#define MUSHROOMS_CHAR 'M'
+#define TOMATOES_CHAR 'T'
+#define PINEAPPLE_CHAR 'P'
+#define EMPTY_CHAR '\040'
+
+/**
+ * Dough Types
+ */
+#define DOUGH_REGULAR 'r'
+#define DOUGH_VEGAN 'v'
+#define DOUGH_WHOLE_WHEAT 'w'
+#define DOUGH_GLUTEN_FREE 'f'
+
+struct Toppings {
   float olives;
   float mushrooms;
   float tomatoes;
-  float pineapple
+  float pineapple;
 };
 
 struct Pizza {
@@ -21,7 +54,7 @@ struct Pizza {
   int width;
   char doughType;
   double relativeSize;
-  struct ToppingPortions toppingPortions;
+  struct Toppings toppings;
   double totalPrice;
 };
 
@@ -64,6 +97,7 @@ double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizz
                                             float pizzaToppingPortionsMushrooms);
 double calculatePizzaPrice(struct Pizza pizza);
 void printPizzaSummary(struct Pizza pizza);
+void printPizzaPreview(struct Pizza pizza);
 int chooseDeliveryType();
 bool isValidDeliveryType(int deliveryType);
 int calculateDeliveryPriceByDeliveryType(int deliveryType);
@@ -318,7 +352,8 @@ char getPizzaDoughType() {
 };
 
 bool isValidDoughType(char pizzaDoughType) {
-  return (pizzaDoughType == 'r' || pizzaDoughType == 'v' || pizzaDoughType == 'w' || pizzaDoughType == 'f');
+  return (pizzaDoughType == DOUGH_REGULAR || pizzaDoughType == DOUGH_VEGAN || pizzaDoughType == DOUGH_WHOLE_WHEAT ||
+          pizzaDoughType == DOUGH_WHOLE_WHEAT);
 }
 
 double calculateRelativePizzaSize(int pizzaLength, int pizzaWidth) {
@@ -379,59 +414,64 @@ bool isValidToppingSum(float sumOfToppingsPortions) {
   return sumOfToppingsPortions <= 1;
 }
 
+float mapToppingPortionToValidSize(float currentSumOfToppingsPortions, char lastAddedToppingName[],
+                                   float lastAddedToppingPortion) {
+  currentSumOfToppingsPortions += lastAddedToppingPortion;
+  while (!isValidToppingSum(currentSumOfToppingsPortions)) {
+    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
+    currentSumOfToppingsPortions -= lastAddedToppingPortion;
+
+    lastAddedToppingPortion = selectToppingForPizza(lastAddedToppingName);
+    lastAddedToppingPortion = mapToppingPortionsToValues(lastAddedToppingPortion);
+    currentSumOfToppingsPortions += lastAddedToppingPortion;
+  }
+
+  return lastAddedToppingPortion;
+}
+
+float getValidToppingPortionByPortionsSum(float sumOfToppingsPortions, char toppingName[], float toppingPortion) {
+  while (!isValidToppingSum(sumOfToppingsPortions + toppingPortion)) {
+    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
+
+    toppingPortion = selectToppingForPizza(toppingName);
+    toppingPortion = mapToppingPortionsToValues(toppingPortion);
+  }
+
+  return toppingPortion;
+}
+
 struct Pizza addToppingsToPizza(struct Pizza pizza) {
   float sumOfToppingsPortions = 0;
   printf("Please choose the toppings:\n\n");
 
   // Olives
-  pizza.toppingPortions.olives = selectToppingForPizza("Olives");
-  pizza.toppingPortions.olives = mapToppingPortionsToValues(pizza.toppingPortions.olives);
-  sumOfToppingsPortions += pizza.toppingPortions.olives;
+  pizza.toppings.olives = selectToppingForPizza(TOPPING_OLIVES);
+  pizza.toppings.olives = mapToppingPortionsToValues(pizza.toppings.olives);
+  sumOfToppingsPortions += pizza.toppings.olives;
 
   // Mushrooms
-  pizza.toppingPortions.mushrooms = selectToppingForPizza("Mushrooms");
-  pizza.toppingPortions.mushrooms = mapToppingPortionsToValues(pizza.toppingPortions.mushrooms);
-  sumOfToppingsPortions += pizza.toppingPortions.mushrooms;
-
+  pizza.toppings.mushrooms = selectToppingForPizza(TOPPING_MUSHROOMS);
+  pizza.toppings.mushrooms = mapToppingPortionsToValues(pizza.toppings.mushrooms);
   // Validate Topping Overflow
-  while (!isValidToppingSum(sumOfToppingsPortions)) {
-    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
-    sumOfToppingsPortions -= pizza.toppingPortions.mushrooms;
-
-    pizza.toppingPortions.mushrooms = selectToppingForPizza("Mushrooms");
-    pizza.toppingPortions.mushrooms = mapToppingPortionsToValues(pizza.toppingPortions.mushrooms);
-    sumOfToppingsPortions += pizza.toppingPortions.mushrooms;
-  }
+  pizza.toppings.mushrooms =
+      getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_MUSHROOMS, pizza.toppings.mushrooms);
+  sumOfToppingsPortions += pizza.toppings.mushrooms;
 
   // Tomatoes
-  pizza.toppingPortions.tomatoes = selectToppingForPizza("Tomatoes");
-  pizza.toppingPortions.tomatoes = mapToppingPortionsToValues(pizza.toppingPortions.tomatoes);
-  sumOfToppingsPortions += pizza.toppingPortions.tomatoes;
-
+  pizza.toppings.tomatoes = selectToppingForPizza(TOPPING_TOMATOES);
+  pizza.toppings.tomatoes = mapToppingPortionsToValues(pizza.toppings.tomatoes);
   // Validate Topping Overflow
-  while (!isValidToppingSum(sumOfToppingsPortions)) {
-    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
-    sumOfToppingsPortions -= pizza.toppingPortions.tomatoes;
-
-    pizza.toppingPortions.tomatoes = selectToppingForPizza("Tomatoes");
-    pizza.toppingPortions.tomatoes = mapToppingPortionsToValues(pizza.toppingPortions.tomatoes);
-    sumOfToppingsPortions += pizza.toppingPortions.tomatoes;
-  }
+  pizza.toppings.tomatoes =
+      getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_TOMATOES, pizza.toppings.tomatoes);
+  sumOfToppingsPortions += pizza.toppings.tomatoes;
 
   // Pineapple
-  pizza.toppingPortions.pineapple = selectToppingForPizza("Pineapple");
-  pizza.toppingPortions.pineapple = mapToppingPortionsToValues(pizza.toppingPortions.pineapple);
-  sumOfToppingsPortions += pizza.toppingPortions.pineapple;
-
+  pizza.toppings.pineapple = selectToppingForPizza(TOPPING_PINEAPPLE);
+  pizza.toppings.pineapple = mapToppingPortionsToValues(pizza.toppings.pineapple);
   // Validate Topping Overflow
-  while (!isValidToppingSum(sumOfToppingsPortions)) {
-    printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
-    sumOfToppingsPortions -= pizza.toppingPortions.pineapple;
-
-    pizza.toppingPortions.pineapple = selectToppingForPizza("Pineapple");
-    pizza.toppingPortions.pineapple = mapToppingPortionsToValues(pizza.toppingPortions.pineapple);
-    sumOfToppingsPortions += pizza.toppingPortions.pineapple;
-  }
+  pizza.toppings.pineapple =
+      getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_PINEAPPLE, pizza.toppings.pineapple);
+  sumOfToppingsPortions += pizza.toppings.pineapple;
 
   return pizza;
 }
@@ -444,16 +484,16 @@ double calculateDoughPriceByRelativeSize(double pizzaRelativeSize, char pizzaDou
   double doughPrice;
 
   switch (pizzaDoughType) {
-    case 'r':
+    case DOUGH_REGULAR:
       doughPrice = pizzaRelativeSize * doughTypeRegularPrice;
       break;
-    case 'v':
+    case DOUGH_VEGAN:
       doughPrice = pizzaRelativeSize * doughTypeVeganPrice;
       break;
-    case 'w':
+    case DOUGH_WHOLE_WHEAT:
       doughPrice = pizzaRelativeSize * doughTypeWholeWheatPrice;
       break;
-    case 'f':
+    case DOUGH_GLUTEN_FREE:
       doughPrice = pizzaRelativeSize * doughTypeGlutenFreePrice;
       break;
     default:
@@ -475,8 +515,8 @@ double calculatePizzaPrice(struct Pizza pizza) {
 
   pizzaPriceByPizzaSize = calculatePizzaPriceByRelativeSize(pizza.relativeSize);
   doughPrice = calculateDoughPriceByRelativeSize(pizza.relativeSize, pizza.doughType);
-  toppingsPrice = calculateToppingsPriceByRelativeSize(pizza.relativeSize, pizza.toppingPortions.olives,
-                                                       pizza.toppingPortions.mushrooms);
+  toppingsPrice =
+      calculateToppingsPriceByRelativeSize(pizza.relativeSize, pizza.toppings.olives, pizza.toppings.mushrooms);
 
   totalPizzaPrice = pizzaPriceByPizzaSize + doughPrice + toppingsPrice;
 
@@ -489,6 +529,337 @@ void printPizzaSummary(struct Pizza pizza) {
          pizza.number);
   printf("Pizza size: %dx%d\n", pizza.length, pizza.width);
   printf("Pizza price (without tax): %.2f\n", pizza.totalPrice);
+  printPizzaPreview(pizza);
+}
+
+void printPizzaPreview(struct Pizza pizza) {
+  int i, j;
+  char firstQuarterTopping = NULL, secondQuarterTopping = NULL, thirdQuarterTopping = NULL, fourthQuarterTopping = NULL;
+
+  if (pizza.toppings.olives > 0) {
+    if (pizza.toppings.olives == 0.25) {
+      firstQuarterTopping = OLIVES_CHAR;
+      if (pizza.toppings.mushrooms > 0) {
+        if (pizza.toppings.mushrooms == 0.25) {
+          secondQuarterTopping = MUSHROOMS_CHAR;
+          if (pizza.toppings.tomatoes > 0) {
+            if (pizza.toppings.tomatoes == 0.25) {
+              thirdQuarterTopping = TOMATOES_CHAR;
+              if (pizza.toppings.pineapple > 0) {
+                if (pizza.toppings.pineapple == 0.25) {
+                  fourthQuarterTopping = PINEAPPLE_CHAR;
+                }
+              } else {
+                fourthQuarterTopping = EMPTY_CHAR;
+              }
+            } else if (pizza.toppings.tomatoes == 0.5) {
+              thirdQuarterTopping = TOMATOES_CHAR;
+              fourthQuarterTopping = TOMATOES_CHAR;
+            }
+          }
+        } else if (pizza.toppings.mushrooms == 0.5) {
+          secondQuarterTopping = MUSHROOMS_CHAR;
+          thirdQuarterTopping = MUSHROOMS_CHAR;
+          if (pizza.toppings.tomatoes > 0) {
+            if (pizza.toppings.tomatoes == 0.25) {
+              fourthQuarterTopping = TOMATOES_CHAR;
+            }
+          } else if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              fourthQuarterTopping = PINEAPPLE_CHAR;
+            }
+          } else {
+            fourthQuarterTopping = EMPTY_CHAR;
+          }
+        }
+      } else if (pizza.toppings.tomatoes > 0) {
+        if (pizza.toppings.tomatoes == 0.25) {
+          secondQuarterTopping = TOMATOES_CHAR;
+          if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              thirdQuarterTopping = PINEAPPLE_CHAR;
+            } else if (pizza.toppings.pineapple == 0.5) {
+              thirdQuarterTopping = PINEAPPLE_CHAR;
+              fourthQuarterTopping = PINEAPPLE_CHAR;
+            }
+          }
+        } else if (pizza.toppings.tomatoes == 0.5) {
+          secondQuarterTopping = TOMATOES_CHAR;
+          thirdQuarterTopping = TOMATOES_CHAR;
+          if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              fourthQuarterTopping = PINEAPPLE_CHAR;
+            }
+          } else {
+            fourthQuarterTopping = EMPTY_CHAR;
+          }
+        }
+      } else if (pizza.toppings.pineapple > 0) {
+        if (pizza.toppings.pineapple == 0.25) {
+          secondQuarterTopping = PINEAPPLE_CHAR;
+          thirdQuarterTopping = EMPTY_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        } else if (pizza.toppings.pineapple == 0.5) {
+          secondQuarterTopping = PINEAPPLE_CHAR;
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        }
+      } else {
+        secondQuarterTopping = EMPTY_CHAR;
+        thirdQuarterTopping = EMPTY_CHAR;
+        fourthQuarterTopping = EMPTY_CHAR;
+      }
+    } else if (pizza.toppings.olives == 0.5) {
+      firstQuarterTopping = OLIVES_CHAR;
+      secondQuarterTopping = OLIVES_CHAR;
+      if (pizza.toppings.mushrooms > 0) {
+        if (pizza.toppings.mushrooms == 0.25) {
+          thirdQuarterTopping = MUSHROOMS_CHAR;
+          if (pizza.toppings.tomatoes > 0) {
+            if (pizza.toppings.tomatoes == 0.25) {
+              fourthQuarterTopping = TOMATOES_CHAR;
+            }
+          } else if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              fourthQuarterTopping = PINEAPPLE_CHAR;
+            }
+          } else {
+            fourthQuarterTopping = EMPTY_CHAR;
+          }
+        } else if (pizza.toppings.mushrooms == 0.5) {
+          thirdQuarterTopping = MUSHROOMS_CHAR;
+          fourthQuarterTopping = MUSHROOMS_CHAR;
+        }
+      } else if (pizza.toppings.tomatoes > 0) {
+        if (pizza.toppings.tomatoes == 0.25) {
+          thirdQuarterTopping = TOMATOES_CHAR;
+          if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              fourthQuarterTopping = PINEAPPLE_CHAR;
+            }
+          } else {
+            fourthQuarterTopping = EMPTY_CHAR;
+          }
+        } else if (pizza.toppings.tomatoes == 0.5) {
+          thirdQuarterTopping = TOMATOES_CHAR;
+          fourthQuarterTopping = TOMATOES_CHAR;
+        }
+      } else if (pizza.toppings.pineapple > 0) {
+        if (pizza.toppings.pineapple == 0.25) {
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        } else if (pizza.toppings.pineapple == 0.5) {
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = PINEAPPLE_CHAR;
+        }
+      } else {
+        thirdQuarterTopping = EMPTY_CHAR;
+        fourthQuarterTopping = EMPTY_CHAR;
+      }
+    } else if (pizza.toppings.olives == 1) {
+      firstQuarterTopping = OLIVES_CHAR;
+      secondQuarterTopping = OLIVES_CHAR;
+      thirdQuarterTopping = OLIVES_CHAR;
+      fourthQuarterTopping = OLIVES_CHAR;
+    }
+  } else if (pizza.toppings.mushrooms > 0) {
+    if (pizza.toppings.mushrooms == 0.25) {
+      firstQuarterTopping = MUSHROOMS_CHAR;
+      if (pizza.toppings.tomatoes > 0) {
+        if (pizza.toppings.tomatoes == 0.25) {
+          secondQuarterTopping = TOMATOES_CHAR;
+          if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              thirdQuarterTopping = PINEAPPLE_CHAR;
+              fourthQuarterTopping = EMPTY_CHAR;
+            }
+          } else {
+            thirdQuarterTopping = EMPTY_CHAR;
+            fourthQuarterTopping = EMPTY_CHAR;
+          }
+        } else if (pizza.toppings.tomatoes == 0.5) {
+          secondQuarterTopping = TOMATOES_CHAR;
+          thirdQuarterTopping = TOMATOES_CHAR;
+          if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              fourthQuarterTopping = PINEAPPLE_CHAR;
+            }
+          } else {
+            fourthQuarterTopping = EMPTY_CHAR;
+          }
+        }
+      } else if (pizza.toppings.pineapple > 0) {
+        if (pizza.toppings.pineapple == 0.25) {
+          secondQuarterTopping = PINEAPPLE_CHAR;
+          thirdQuarterTopping = EMPTY_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        } else if (pizza.toppings.pineapple == 0.5) {
+          secondQuarterTopping = PINEAPPLE_CHAR;
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        }
+      } else {
+        secondQuarterTopping = EMPTY_CHAR;
+        thirdQuarterTopping = EMPTY_CHAR;
+        fourthQuarterTopping = EMPTY_CHAR;
+      }
+    } else if (pizza.toppings.mushrooms == 0.5) {
+      firstQuarterTopping = MUSHROOMS_CHAR;
+      secondQuarterTopping = MUSHROOMS_CHAR;
+      if (pizza.toppings.tomatoes > 0) {
+        if (pizza.toppings.tomatoes == 0.25) {
+          thirdQuarterTopping = TOMATOES_CHAR;
+          if (pizza.toppings.pineapple > 0) {
+            if (pizza.toppings.pineapple == 0.25) {
+              fourthQuarterTopping = PINEAPPLE_CHAR;
+            }
+          } else {
+            fourthQuarterTopping = EMPTY_CHAR;
+          }
+        } else if (pizza.toppings.tomatoes == 0.5) {
+          thirdQuarterTopping = TOMATOES_CHAR;
+          fourthQuarterTopping = TOMATOES_CHAR;
+        }
+      } else if (pizza.toppings.pineapple > 0) {
+        if (pizza.toppings.pineapple == 0.25) {
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        } else if (pizza.toppings.pineapple == 0.5) {
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = PINEAPPLE_CHAR;
+        }
+      } else {
+        thirdQuarterTopping = EMPTY_CHAR;
+        fourthQuarterTopping = EMPTY_CHAR;
+      }
+    } else if (pizza.toppings.mushrooms == 1) {
+      firstQuarterTopping = MUSHROOMS_CHAR;
+      secondQuarterTopping = MUSHROOMS_CHAR;
+      thirdQuarterTopping = MUSHROOMS_CHAR;
+      fourthQuarterTopping = MUSHROOMS_CHAR;
+    }
+  } else if (pizza.toppings.tomatoes > 0) {
+    if (pizza.toppings.tomatoes == 0.25) {
+      firstQuarterTopping = TOMATOES_CHAR;
+      if (pizza.toppings.pineapple > 0) {
+        if (pizza.toppings.pineapple == 0.25) {
+          secondQuarterTopping = PINEAPPLE_CHAR;
+          thirdQuarterTopping = EMPTY_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        } else if (pizza.toppings.pineapple == 0.5) {
+          secondQuarterTopping = PINEAPPLE_CHAR;
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        }
+      } else {
+        secondQuarterTopping = EMPTY_CHAR;
+        thirdQuarterTopping = EMPTY_CHAR;
+        fourthQuarterTopping = EMPTY_CHAR;
+      }
+    } else if (pizza.toppings.tomatoes == 0.5) {
+      firstQuarterTopping = TOMATOES_CHAR;
+      secondQuarterTopping = TOMATOES_CHAR;
+      if (pizza.toppings.pineapple > 0) {
+        if (pizza.toppings.pineapple == 0.25) {
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = EMPTY_CHAR;
+        } else if (pizza.toppings.pineapple == 0.5) {
+          thirdQuarterTopping = PINEAPPLE_CHAR;
+          fourthQuarterTopping = PINEAPPLE_CHAR;
+        }
+      } else {
+        thirdQuarterTopping = EMPTY_CHAR;
+        fourthQuarterTopping = EMPTY_CHAR;
+      }
+    } else if (pizza.toppings.tomatoes == 1) {
+      firstQuarterTopping = TOMATOES_CHAR;
+      secondQuarterTopping = TOMATOES_CHAR;
+      thirdQuarterTopping = TOMATOES_CHAR;
+      fourthQuarterTopping = TOMATOES_CHAR;
+    }
+  } else if (pizza.toppings.pineapple > 0) {
+    if (pizza.toppings.pineapple == 0.25) {
+      firstQuarterTopping = PINEAPPLE_CHAR;
+      secondQuarterTopping = EMPTY_CHAR;
+      thirdQuarterTopping = EMPTY_CHAR;
+      fourthQuarterTopping = EMPTY_CHAR;
+    } else if (pizza.toppings.pineapple == 0.5) {
+      firstQuarterTopping = PINEAPPLE_CHAR;
+      secondQuarterTopping = PINEAPPLE_CHAR;
+      thirdQuarterTopping = EMPTY_CHAR;
+      fourthQuarterTopping = EMPTY_CHAR;
+    } else if (pizza.toppings.pineapple == 1) {
+      firstQuarterTopping = PINEAPPLE_CHAR;
+      secondQuarterTopping = PINEAPPLE_CHAR;
+      thirdQuarterTopping = PINEAPPLE_CHAR;
+      fourthQuarterTopping = PINEAPPLE_CHAR;
+    }
+  } else {
+    firstQuarterTopping = EMPTY_CHAR;
+    secondQuarterTopping = EMPTY_CHAR;
+    thirdQuarterTopping = EMPTY_CHAR;
+    fourthQuarterTopping = EMPTY_CHAR;
+  }
+
+  // Print first half of pizza
+  for (i = 0; i < (pizza.length / 2); i++) {
+    // Print first row (dough only)
+    if (i == 0) {
+      for (j = 0; j < pizza.width; j++) {
+        printf("%c", pizza.doughType);
+      }
+      printf("\n");
+    } else {
+      // Print dough on margins (left)
+      printf("%c", pizza.doughType);
+
+      // Print 4th quarter topping
+      for (j = 0; j < (pizza.width - 2) / 2; j++) {
+        printf("%c", fourthQuarterTopping);
+      }
+
+      // Print 1st quarter topping
+      for (j = 0; j < (pizza.width - 2) / 2; j++) {
+        printf("%c", firstQuarterTopping);
+      }
+
+      // Print dough on margins (right)
+      printf("%c", pizza.doughType);
+
+      // Print newline
+      printf("\n");
+    }
+  }
+
+  // Print second half of pizza
+  for (i = 0; i < (pizza.length / 2); i++) {
+    // Print last row (dough only)
+    if (i == (pizza.length / 2) - 1) {
+      for (j = 0; j < pizza.width; j++) {
+        printf("%c", pizza.doughType);
+      }
+      printf("\n");
+    } else {
+      // Print dough on margins (left)
+      printf("%c", pizza.doughType);
+
+      // Print 3rd quarter topping
+      for (j = 0; j < (pizza.width - 2) / 2; j++) {
+        printf("%c", thirdQuarterTopping);
+      }
+
+      // Print 2nd quarter topping
+      for (j = 0; j < (pizza.width - 2) / 2; j++) {
+        printf("%c", secondQuarterTopping);
+      }
+
+      // Print dough on margins (right)
+      printf("%c", pizza.doughType);
+
+      // Print newline
+      printf("\n");
+    }
+  }
 }
 
 struct Pizza buildPizza(int pizzaNumber) {
