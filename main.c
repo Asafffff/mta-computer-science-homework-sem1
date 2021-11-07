@@ -248,7 +248,7 @@ bool isValidCustomerIdCheckDigit(int customerId) {
 
 void printMenu() {
   // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
-  printf("\nOur menu:\n"
+  printf("Our menu:\n"
          "*********\n"
          "Basic pizza: %.2f NIS for %dx%d size pizza\n\n",
          (float)basicPizzaPrice, basicPizzaLength, basicPizzaWidth);
@@ -920,6 +920,11 @@ void printPizzaPreview(struct Pizza pizza) {
 
 struct Pizza buildPizza(int pizzaNumber) {
   struct Pizza pizza;
+  struct Toppings pizzaToppings = {.olives = 0, .mushrooms = 0, .tomatoes = 0, .pineapple = 0};
+
+  // Init empty toppings
+  pizza.toppings = pizzaToppings;
+
   pizza.number = pizzaNumber;
 
   printHeaderForPizzaNumber(pizza.number);
@@ -946,7 +951,7 @@ struct Pizza buildPizza(int pizzaNumber) {
 int chooseDeliveryType() {
   int deliveryType;
 
-  printf("Do you want delivery for the price of 15 NIS? Enter 1 for delivery or 0 for pick-up: ");
+  printf("Do you want delivery for the price of 15 NIS? Enter 1 for delivery or 0 for pick-up:\n");
   scanf("%d", &deliveryType);
 
   while (!isValidDeliveryType(deliveryType)) {
@@ -984,7 +989,7 @@ int getPaymentInCashFromInput() {
   int customerPaymentAmountInNIS;
 
   // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
-  printf("\nPlease enter your payment: ");
+  printf("Please enter your payment: ");
   scanf("%d", &customerPaymentAmountInNIS);
 
   return customerPaymentAmountInNIS;
