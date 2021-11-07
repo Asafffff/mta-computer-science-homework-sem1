@@ -488,6 +488,9 @@ struct Pizza addToppingsToPizza(struct Pizza pizza) {
     pizza.toppings.pineapple =
         getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_PINEAPPLE, pizza.toppings.pineapple);
     sumOfToppingsPortions += pizza.toppings.pineapple;
+
+    // End of available toppings
+    break;
   }
 
   return pizza;
