@@ -91,6 +91,7 @@ float selectToppingForPizza();
 bool isValidToppingPortion(float toppingPortion);
 float mapToppingPortionsToValues(float toppingPortion);
 bool isValidToppingSum(float sumOfToppingsPortions);
+bool isToppingsCoverAllPizza(float sumOfToppingsPortions);
 double calculatePizzaPriceByRelativeSize(double pizzaRelativeSize);
 double calculateDoughPriceByRelativeSize(double pizzaRelativeSize, char pizzaDoughType);
 double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizzaToppingPortionsOlives,
@@ -414,6 +415,10 @@ bool isValidToppingSum(float sumOfToppingsPortions) {
   return sumOfToppingsPortions <= 1;
 }
 
+bool isToppingsCoverAllPizza(float sumOfToppingsPortions) {
+  return sumOfToppingsPortions == 1;
+}
+
 float mapToppingPortionToValidSize(float currentSumOfToppingsPortions, char lastAddedToppingName[],
                                    float lastAddedToppingPortion) {
   currentSumOfToppingsPortions += lastAddedToppingPortion;
@@ -444,34 +449,46 @@ struct Pizza addToppingsToPizza(struct Pizza pizza) {
   float sumOfToppingsPortions = 0;
   printf("Please choose the toppings:\n\n");
 
-  // Olives
-  pizza.toppings.olives = selectToppingForPizza(TOPPING_OLIVES);
-  pizza.toppings.olives = mapToppingPortionsToValues(pizza.toppings.olives);
-  sumOfToppingsPortions += pizza.toppings.olives;
+  // Add toppings untill full
+  while (true) {
+    // Olives
+    pizza.toppings.olives = selectToppingForPizza(TOPPING_OLIVES);
+    pizza.toppings.olives = mapToppingPortionsToValues(pizza.toppings.olives);
+    sumOfToppingsPortions += pizza.toppings.olives;
+    if (isToppingsCoverAllPizza(sumOfToppingsPortions)) {
+      break;
+    }
 
-  // Mushrooms
-  pizza.toppings.mushrooms = selectToppingForPizza(TOPPING_MUSHROOMS);
-  pizza.toppings.mushrooms = mapToppingPortionsToValues(pizza.toppings.mushrooms);
-  // Validate Topping Overflow
-  pizza.toppings.mushrooms =
-      getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_MUSHROOMS, pizza.toppings.mushrooms);
-  sumOfToppingsPortions += pizza.toppings.mushrooms;
+    // Mushrooms
+    pizza.toppings.mushrooms = selectToppingForPizza(TOPPING_MUSHROOMS);
+    pizza.toppings.mushrooms = mapToppingPortionsToValues(pizza.toppings.mushrooms);
+    // Validate Topping Overflow
+    pizza.toppings.mushrooms =
+        getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_MUSHROOMS, pizza.toppings.mushrooms);
+    sumOfToppingsPortions += pizza.toppings.mushrooms;
+    if (isToppingsCoverAllPizza(sumOfToppingsPortions)) {
+      break;
+    }
 
-  // Tomatoes
-  pizza.toppings.tomatoes = selectToppingForPizza(TOPPING_TOMATOES);
-  pizza.toppings.tomatoes = mapToppingPortionsToValues(pizza.toppings.tomatoes);
-  // Validate Topping Overflow
-  pizza.toppings.tomatoes =
-      getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_TOMATOES, pizza.toppings.tomatoes);
-  sumOfToppingsPortions += pizza.toppings.tomatoes;
+    // Tomatoes
+    pizza.toppings.tomatoes = selectToppingForPizza(TOPPING_TOMATOES);
+    pizza.toppings.tomatoes = mapToppingPortionsToValues(pizza.toppings.tomatoes);
+    // Validate Topping Overflow
+    pizza.toppings.tomatoes =
+        getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_TOMATOES, pizza.toppings.tomatoes);
+    sumOfToppingsPortions += pizza.toppings.tomatoes;
+    if (isToppingsCoverAllPizza(sumOfToppingsPortions)) {
+      break;
+    }
 
-  // Pineapple
-  pizza.toppings.pineapple = selectToppingForPizza(TOPPING_PINEAPPLE);
-  pizza.toppings.pineapple = mapToppingPortionsToValues(pizza.toppings.pineapple);
-  // Validate Topping Overflow
-  pizza.toppings.pineapple =
-      getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_PINEAPPLE, pizza.toppings.pineapple);
-  sumOfToppingsPortions += pizza.toppings.pineapple;
+    // Pineapple
+    pizza.toppings.pineapple = selectToppingForPizza(TOPPING_PINEAPPLE);
+    pizza.toppings.pineapple = mapToppingPortionsToValues(pizza.toppings.pineapple);
+    // Validate Topping Overflow
+    pizza.toppings.pineapple =
+        getValidToppingPortionByPortionsSum(sumOfToppingsPortions, TOPPING_PINEAPPLE, pizza.toppings.pineapple);
+    sumOfToppingsPortions += pizza.toppings.pineapple;
+  }
 
   return pizza;
 }
