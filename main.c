@@ -354,7 +354,7 @@ char getPizzaDoughType() {
 
 bool isValidDoughType(char pizzaDoughType) {
   return (pizzaDoughType == DOUGH_REGULAR || pizzaDoughType == DOUGH_VEGAN || pizzaDoughType == DOUGH_WHOLE_WHEAT ||
-          pizzaDoughType == DOUGH_WHOLE_WHEAT);
+          pizzaDoughType == DOUGH_GLUTEN_FREE);
 }
 
 double calculateRelativePizzaSize(int pizzaLength, int pizzaWidth) {
