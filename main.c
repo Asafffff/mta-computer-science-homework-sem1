@@ -21,7 +21,8 @@
  */
 #define TOPPING_OLIVES "Olives"
 #define TOPPING_MUSHROOMS "Mushrooms"
-#define TOPPING_TOMATOES "Tomatoes"
+// TODO: Hope who reads this will fix the "tomatos" typo
+#define TOPPING_TOMATOES "Tomatos"
 #define TOPPING_PINEAPPLE "Pineapple"
 
 /**
@@ -86,7 +87,7 @@ char getPizzaDoughType();
 bool isValidDoughType(char pizzaDoughType);
 double calculateRelativePizzaSize(int pizzaLength, int pizzaWidth);
 struct Pizza addToppingsToPizza(struct Pizza pizza);
-void printToppingSelectionMenuByToppingName(char toppingName[]);
+void printToppingSelectionMenu(char toppingName[], bool isIgnoreToppingName);
 float selectToppingForPizza();
 bool isValidToppingPortion(float toppingPortion);
 float mapToppingPortionsToValues(float toppingPortion);
@@ -94,8 +95,8 @@ bool isValidToppingSum(float sumOfToppingsPortions);
 bool isToppingsCoverAllPizza(float sumOfToppingsPortions);
 double calculatePizzaPriceByRelativeSize(double pizzaRelativeSize);
 double calculateDoughPriceByRelativeSize(double pizzaRelativeSize, char pizzaDoughType);
-double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizzaToppingPortionsOlives,
-                                            float pizzaToppingPortionsMushrooms);
+double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float olivesPortion, float mushroomsPortion,
+                                            float tomatoesPortion, float pineapplePortion);
 double calculatePizzaPrice(struct Pizza pizza);
 void printPizzaSummary(struct Pizza pizza);
 void printPizzaPreview(struct Pizza pizza);
@@ -165,10 +166,10 @@ int main() {
 };
 
 void printWelcomeMessage() {
-  printf(" Welcome to MTA-Pizza!\n"
+  printf(" Welcome to MTA-Pizza!\n\n"
          "*****\n"
          " *** \n"
-         "  *  \n");
+         "  *  \n\n");
 }
 
 int getCustomerIdFromInput() {
@@ -178,7 +179,11 @@ int getCustomerIdFromInput() {
   scanf("%d", &customerId);
 
   while (!isValidCustomerId(customerId)) {
-    printf("Invalid ID number! Try again.\n");
+    if (!isValidCustomerIdLength(customerId)) {
+      printf("Invalid ID number! Try again.\n");
+    } else if (!isValidCustomerIdCheckDigit(customerId)) {
+      printf("Invalid check digit! Try again.\n");
+    }
 
     printf("Please enter your ID number:\n");
     scanf("%d", &customerId);
@@ -192,7 +197,7 @@ bool isValidCustomerId(int customerId) {
 }
 
 bool isValidCustomerIdLength(int customerId) {
-  return customerId > 0 && customerId < 100000000;
+  return customerId > 0 && customerId < 1000000000;
 }
 
 int hashLastDigit(int i, int customerIdLastDigit) {
@@ -242,7 +247,8 @@ bool isValidCustomerIdCheckDigit(int customerId) {
 }
 
 void printMenu() {
-  printf("Our menu:\n"
+  // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
+  printf("\nOur menu:\n"
          "*********\n"
          "Basic pizza: %.2f NIS for %dx%d size pizza\n\n",
          (float)basicPizzaPrice, basicPizzaLength, basicPizzaWidth);
@@ -258,7 +264,7 @@ void printMenu() {
          "Regular: %d NIS\n"
          "Vegan: %d NIS\n"
          "Whole wheat: %d NIS\n"
-         "Gluten free: %d NIS\n",
+         "Gluten free: %d NIS\n\n",
          doughTypeRegularPrice, doughTypeVeganPrice, doughTypeWholeWheatPrice, doughTypeGlutenFreePrice);
 };
 
@@ -291,13 +297,15 @@ void printHeaderForPizzaNumber(int pizzaNumber) {
 int getPizzaLengthFromInput() {
   int pizzaLength;
 
-  printf("Please enter your pizza's length (cm):\n");
+  // TODO: Hope who reads this will make sure they will add the newline char back.
+  printf("Please enter your pizza's length (cm): ");
   scanf("%d", &pizzaLength);
 
   while (!isValidPizzaLength(pizzaLength)) {
     printf("Invalid length! Try again.\n");
 
-    printf("Please enter your pizza's length (cm):\n");
+    // TODO: Hope who reads this will make sure they will add the newline char back.
+    printf("Please enter your pizza's length (cm): ");
     scanf("%d", &pizzaLength);
   }
 
@@ -307,7 +315,7 @@ int getPizzaLengthFromInput() {
 int getPizzaWidthFromInput() {
   int pizzaWidth;
 
-  printf("Please enter your pizza's width (cm):\n");
+  printf("Please enter your pizza's width (cm): ");
   scanf("%d", &pizzaWidth);
 
   while (!isValidPizzaWidth(pizzaWidth)) {
@@ -330,8 +338,8 @@ bool isValidPizzaWidth(int pizzaWidth) {
 
 char getPizzaDoughType() {
   char pizzaDoughType;
-
-  printf("Please enter the pizza's dough type:\n"
+  // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
+  printf("\nPlease enter the pizza's dough type:\n"
          "r - for regular\n"
          "v - for vegan\n"
          "w - for whole wheat\n"
@@ -341,7 +349,8 @@ char getPizzaDoughType() {
   while (!isValidDoughType(pizzaDoughType)) {
     printf("Invalid choice! Try again.\n");
 
-    printf("Please enter the pizza's dough type:\n"
+    // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
+    printf("\nPlease enter the pizza's dough type:\n"
            "r - for regular\n"
            "v - for vegan\n"
            "w - for whole wheat\n"
@@ -361,25 +370,49 @@ double calculateRelativePizzaSize(int pizzaLength, int pizzaWidth) {
   return ((double)pizzaLength * pizzaWidth) / (basicPizzaLength * basicPizzaWidth);
 };
 
-void printToppingSelectionMenuByToppingName(char toppingName[]) {
-  printf("%s (choose 0-3):\n"
-         "0. None\n"
-         "1. Whole pizza\n"
-         "2. Half pizza\n"
-         "3. Quarter pizza\n",
-         toppingName);
+void printToppingSelectionMenu(char toppingName[], bool isIgnoreToppingName) {
+  if (isIgnoreToppingName) {
+    printf("0. None\n"
+           "1. Whole pizza\n"
+           "2. Half pizza\n"
+           "3. Quarter pizza\n\n");
+  } else {
+    printf("%s (choose 0-3):\n"
+           "0. None\n"
+           "1. Whole pizza\n"
+           "2. Half pizza\n"
+           "3. Quarter pizza\n\n",
+           toppingName);
+  }
 };
 
 float selectToppingForPizza(char toppingName[]) {
   float pizzaToppingPortion;
 
-  printToppingSelectionMenuByToppingName(toppingName);
+  printToppingSelectionMenu(toppingName, false);
   scanf("%f", &pizzaToppingPortion);
 
   while (!isValidToppingPortion(pizzaToppingPortion)) {
     printf("Invalid choice! Try again.\n");
 
-    printToppingSelectionMenuByToppingName(toppingName);
+    printToppingSelectionMenu(toppingName, true);
+    scanf("%f", &pizzaToppingPortion);
+  }
+
+  return pizzaToppingPortion;
+}
+
+// TODO: Remove this when they will fix the wrong identation -_-
+float selectToppingForPizzaOnOverflow(char toppingName[]) {
+  float pizzaToppingPortion;
+
+  printToppingSelectionMenu(toppingName, true);
+  scanf("%f", &pizzaToppingPortion);
+
+  while (!isValidToppingPortion(pizzaToppingPortion)) {
+    printf("Invalid choice! Try again.\n");
+
+    printToppingSelectionMenu(toppingName, true);
     scanf("%f", &pizzaToppingPortion);
   }
 
@@ -438,7 +471,8 @@ float getValidToppingPortionByPortionsSum(float sumOfToppingsPortions, char topp
   while (!isValidToppingSum(sumOfToppingsPortions + toppingPortion)) {
     printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
 
-    toppingPortion = selectToppingForPizza(toppingName);
+    // TODO: Use the previous function, 'selectToppingForPizza' when they fix identation problems
+    toppingPortion = selectToppingForPizzaOnOverflow(toppingName);
     toppingPortion = mapToppingPortionsToValues(toppingPortion);
   }
 
@@ -524,10 +558,10 @@ double calculateDoughPriceByRelativeSize(double pizzaRelativeSize, char pizzaDou
   return doughPrice;
 }
 
-double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float pizzaToppingPortionsOlives,
-                                            float pizzaToppingPortionsMushrooms) {
-  return pizzaRelativeSize *
-         ((toppingOlivesPrice * pizzaToppingPortionsOlives) + (toppingMushroomsPrice * pizzaToppingPortionsMushrooms));
+double calculateToppingsPriceByRelativeSize(double pizzaRelativeSize, float olivesPortion, float mushroomsPortion,
+                                            float tomatoesPortion, float pineapplePortion) {
+  return pizzaRelativeSize * ((toppingOlivesPrice * olivesPortion) + (toppingMushroomsPrice * mushroomsPortion) +
+                              (toppingTomatoesPrice * tomatoesPortion) + (toppingPineapplePrice * pineapplePortion));
 };
 
 double calculatePizzaPrice(struct Pizza pizza) {
@@ -536,7 +570,8 @@ double calculatePizzaPrice(struct Pizza pizza) {
   pizzaPriceByPizzaSize = calculatePizzaPriceByRelativeSize(pizza.relativeSize);
   doughPrice = calculateDoughPriceByRelativeSize(pizza.relativeSize, pizza.doughType);
   toppingsPrice =
-      calculateToppingsPriceByRelativeSize(pizza.relativeSize, pizza.toppings.olives, pizza.toppings.mushrooms);
+      calculateToppingsPriceByRelativeSize(pizza.relativeSize, pizza.toppings.olives, pizza.toppings.mushrooms,
+                                           pizza.toppings.tomatoes, pizza.toppings.pineapple);
 
   totalPizzaPrice = pizzaPriceByPizzaSize + doughPrice + toppingsPrice;
 
@@ -880,6 +915,7 @@ void printPizzaPreview(struct Pizza pizza) {
       printf("\n");
     }
   }
+  printf("\n");
 }
 
 struct Pizza buildPizza(int pizzaNumber) {
@@ -910,7 +946,7 @@ struct Pizza buildPizza(int pizzaNumber) {
 int chooseDeliveryType() {
   int deliveryType;
 
-  printf("Do you want delivery for the price of 15 NIS? Enter 1 for delivery or 0 for pick-up:\n");
+  printf("Do you want delivery for the price of 15 NIS? Enter 1 for delivery or 0 for pick-up: ");
   scanf("%d", &deliveryType);
 
   while (!isValidDeliveryType(deliveryType)) {
@@ -938,7 +974,7 @@ void printOrderSummaryForCustomerId(int customerId, int pizzasAmount, int delive
          "*******************\n");
   printf("ID number: %09d\n", customerId);
   printf("Number of pizzas: %d\n", pizzasAmount);
-  printf(deliveryType == DELIVERY ? "Delivery" : "Pickup");
+  printf(deliveryType == DELIVERY ? "Delivery\n" : "Pick-up\n");
   printf("Total price: %.2f\n"
          "Total price with tax (rounded down): %d\n",
          totalPrice, (int)(totalPriceIncludingVAT));
@@ -947,7 +983,8 @@ void printOrderSummaryForCustomerId(int customerId, int pizzasAmount, int delive
 int getPaymentInCashFromInput() {
   int customerPaymentAmountInNIS;
 
-  printf("Please enter your payment:\n");
+  // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
+  printf("\nPlease enter your payment: ");
   scanf("%d", &customerPaymentAmountInNIS);
 
   return customerPaymentAmountInNIS;
