@@ -32,7 +32,7 @@
 #define MUSHROOMS_CHAR 'M'
 #define TOMATOES_CHAR 'T'
 #define PINEAPPLE_CHAR 'P'
-#define EMPTY_CHAR '\040'
+#define EMPTY_CHAR ' '
 
 /**
  * Dough Types
@@ -41,6 +41,13 @@
 #define DOUGH_VEGAN 'v'
 #define DOUGH_WHOLE_WHEAT 'w'
 #define DOUGH_GLUTEN_FREE 'f'
+
+struct Quarters {
+  char first;
+  char second;
+  char third;
+  char fourth;
+};
 
 struct Toppings {
   float olives;
@@ -111,6 +118,12 @@ int askForPaymentUntilNonNegativeChange(int paymentChange);
 int calculateRemainingChangeInCoinValue(int remainingChange, int coinValue);
 void printPaymentChangeSummary(struct PaymentChange paymentChange);
 void handlePayment(double totalPriceIncludingVAT);
+
+struct Quarters getToppingRepresentationByQuarters(struct Pizza pizza);
+struct Quarters placeToppingOnQuarter(struct Quarters quarters, int quarterPlacement, char topping);
+struct Quarters addToppingToQuarter(double toppingPortion, char toppingChar, struct Quarters quarters);
+int findNextAvailableQuarter(struct Quarters quarters);
+double sumTotalQuarterToppings(struct Quarters quarters);
 
 bool isEven(int number);
 void printSeparator();
@@ -207,7 +220,7 @@ int hashLastDigit(int i, int customerIdLastDigit) {
   hashResult = isMultiplyByTwo ? customerIdLastDigit * 2 : customerIdLastDigit;
 
   if (hashResult > 9) {
-    int hashResultSumOfDigits, hashResultFirstDigit, hashResultLastDigit;
+    int hashResultFirstDigit, hashResultLastDigit;
 
     hashResultFirstDigit = hashResult / 10;
     hashResultLastDigit = hashResult % 10;
@@ -589,272 +602,9 @@ void printPizzaSummary(struct Pizza pizza) {
 
 void printPizzaPreview(struct Pizza pizza) {
   int i, j;
-  char firstQuarterTopping = NULL, secondQuarterTopping = NULL, thirdQuarterTopping = NULL, fourthQuarterTopping = NULL;
+  struct Quarters toppingsByQuarters;
 
-  if (pizza.toppings.olives > 0) {
-    if (pizza.toppings.olives == 0.25) {
-      firstQuarterTopping = OLIVES_CHAR;
-      if (pizza.toppings.mushrooms > 0) {
-        if (pizza.toppings.mushrooms == 0.25) {
-          secondQuarterTopping = MUSHROOMS_CHAR;
-          if (pizza.toppings.tomatoes > 0) {
-            if (pizza.toppings.tomatoes == 0.25) {
-              thirdQuarterTopping = TOMATOES_CHAR;
-              if (pizza.toppings.pineapple > 0) {
-                if (pizza.toppings.pineapple == 0.25) {
-                  fourthQuarterTopping = PINEAPPLE_CHAR;
-                }
-              } else {
-                fourthQuarterTopping = EMPTY_CHAR;
-              }
-            } else if (pizza.toppings.tomatoes == 0.5) {
-              thirdQuarterTopping = TOMATOES_CHAR;
-              fourthQuarterTopping = TOMATOES_CHAR;
-            }
-          }
-        } else if (pizza.toppings.mushrooms == 0.5) {
-          secondQuarterTopping = MUSHROOMS_CHAR;
-          thirdQuarterTopping = MUSHROOMS_CHAR;
-          if (pizza.toppings.tomatoes > 0) {
-            if (pizza.toppings.tomatoes == 0.25) {
-              fourthQuarterTopping = TOMATOES_CHAR;
-            }
-          } else if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              fourthQuarterTopping = PINEAPPLE_CHAR;
-            }
-          } else {
-            fourthQuarterTopping = EMPTY_CHAR;
-          }
-        }
-      } else if (pizza.toppings.tomatoes > 0) {
-        if (pizza.toppings.tomatoes == 0.25) {
-          secondQuarterTopping = TOMATOES_CHAR;
-          if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              thirdQuarterTopping = PINEAPPLE_CHAR;
-            } else if (pizza.toppings.pineapple == 0.5) {
-              thirdQuarterTopping = PINEAPPLE_CHAR;
-              fourthQuarterTopping = PINEAPPLE_CHAR;
-            }
-          }
-        } else if (pizza.toppings.tomatoes == 0.5) {
-          secondQuarterTopping = TOMATOES_CHAR;
-          thirdQuarterTopping = TOMATOES_CHAR;
-          if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              fourthQuarterTopping = PINEAPPLE_CHAR;
-            }
-          } else {
-            fourthQuarterTopping = EMPTY_CHAR;
-          }
-        }
-      } else if (pizza.toppings.pineapple > 0) {
-        if (pizza.toppings.pineapple == 0.25) {
-          secondQuarterTopping = PINEAPPLE_CHAR;
-          thirdQuarterTopping = EMPTY_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        } else if (pizza.toppings.pineapple == 0.5) {
-          secondQuarterTopping = PINEAPPLE_CHAR;
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        }
-      } else {
-        secondQuarterTopping = EMPTY_CHAR;
-        thirdQuarterTopping = EMPTY_CHAR;
-        fourthQuarterTopping = EMPTY_CHAR;
-      }
-    } else if (pizza.toppings.olives == 0.5) {
-      firstQuarterTopping = OLIVES_CHAR;
-      secondQuarterTopping = OLIVES_CHAR;
-      if (pizza.toppings.mushrooms > 0) {
-        if (pizza.toppings.mushrooms == 0.25) {
-          thirdQuarterTopping = MUSHROOMS_CHAR;
-          if (pizza.toppings.tomatoes > 0) {
-            if (pizza.toppings.tomatoes == 0.25) {
-              fourthQuarterTopping = TOMATOES_CHAR;
-            }
-          } else if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              fourthQuarterTopping = PINEAPPLE_CHAR;
-            }
-          } else {
-            fourthQuarterTopping = EMPTY_CHAR;
-          }
-        } else if (pizza.toppings.mushrooms == 0.5) {
-          thirdQuarterTopping = MUSHROOMS_CHAR;
-          fourthQuarterTopping = MUSHROOMS_CHAR;
-        }
-      } else if (pizza.toppings.tomatoes > 0) {
-        if (pizza.toppings.tomatoes == 0.25) {
-          thirdQuarterTopping = TOMATOES_CHAR;
-          if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              fourthQuarterTopping = PINEAPPLE_CHAR;
-            }
-          } else {
-            fourthQuarterTopping = EMPTY_CHAR;
-          }
-        } else if (pizza.toppings.tomatoes == 0.5) {
-          thirdQuarterTopping = TOMATOES_CHAR;
-          fourthQuarterTopping = TOMATOES_CHAR;
-        }
-      } else if (pizza.toppings.pineapple > 0) {
-        if (pizza.toppings.pineapple == 0.25) {
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        } else if (pizza.toppings.pineapple == 0.5) {
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = PINEAPPLE_CHAR;
-        }
-      } else {
-        thirdQuarterTopping = EMPTY_CHAR;
-        fourthQuarterTopping = EMPTY_CHAR;
-      }
-    } else if (pizza.toppings.olives == 1) {
-      firstQuarterTopping = OLIVES_CHAR;
-      secondQuarterTopping = OLIVES_CHAR;
-      thirdQuarterTopping = OLIVES_CHAR;
-      fourthQuarterTopping = OLIVES_CHAR;
-    }
-  } else if (pizza.toppings.mushrooms > 0) {
-    if (pizza.toppings.mushrooms == 0.25) {
-      firstQuarterTopping = MUSHROOMS_CHAR;
-      if (pizza.toppings.tomatoes > 0) {
-        if (pizza.toppings.tomatoes == 0.25) {
-          secondQuarterTopping = TOMATOES_CHAR;
-          if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              thirdQuarterTopping = PINEAPPLE_CHAR;
-              fourthQuarterTopping = EMPTY_CHAR;
-            }
-          } else {
-            thirdQuarterTopping = EMPTY_CHAR;
-            fourthQuarterTopping = EMPTY_CHAR;
-          }
-        } else if (pizza.toppings.tomatoes == 0.5) {
-          secondQuarterTopping = TOMATOES_CHAR;
-          thirdQuarterTopping = TOMATOES_CHAR;
-          if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              fourthQuarterTopping = PINEAPPLE_CHAR;
-            }
-          } else {
-            fourthQuarterTopping = EMPTY_CHAR;
-          }
-        }
-      } else if (pizza.toppings.pineapple > 0) {
-        if (pizza.toppings.pineapple == 0.25) {
-          secondQuarterTopping = PINEAPPLE_CHAR;
-          thirdQuarterTopping = EMPTY_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        } else if (pizza.toppings.pineapple == 0.5) {
-          secondQuarterTopping = PINEAPPLE_CHAR;
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        }
-      } else {
-        secondQuarterTopping = EMPTY_CHAR;
-        thirdQuarterTopping = EMPTY_CHAR;
-        fourthQuarterTopping = EMPTY_CHAR;
-      }
-    } else if (pizza.toppings.mushrooms == 0.5) {
-      firstQuarterTopping = MUSHROOMS_CHAR;
-      secondQuarterTopping = MUSHROOMS_CHAR;
-      if (pizza.toppings.tomatoes > 0) {
-        if (pizza.toppings.tomatoes == 0.25) {
-          thirdQuarterTopping = TOMATOES_CHAR;
-          if (pizza.toppings.pineapple > 0) {
-            if (pizza.toppings.pineapple == 0.25) {
-              fourthQuarterTopping = PINEAPPLE_CHAR;
-            }
-          } else {
-            fourthQuarterTopping = EMPTY_CHAR;
-          }
-        } else if (pizza.toppings.tomatoes == 0.5) {
-          thirdQuarterTopping = TOMATOES_CHAR;
-          fourthQuarterTopping = TOMATOES_CHAR;
-        }
-      } else if (pizza.toppings.pineapple > 0) {
-        if (pizza.toppings.pineapple == 0.25) {
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        } else if (pizza.toppings.pineapple == 0.5) {
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = PINEAPPLE_CHAR;
-        }
-      } else {
-        thirdQuarterTopping = EMPTY_CHAR;
-        fourthQuarterTopping = EMPTY_CHAR;
-      }
-    } else if (pizza.toppings.mushrooms == 1) {
-      firstQuarterTopping = MUSHROOMS_CHAR;
-      secondQuarterTopping = MUSHROOMS_CHAR;
-      thirdQuarterTopping = MUSHROOMS_CHAR;
-      fourthQuarterTopping = MUSHROOMS_CHAR;
-    }
-  } else if (pizza.toppings.tomatoes > 0) {
-    if (pizza.toppings.tomatoes == 0.25) {
-      firstQuarterTopping = TOMATOES_CHAR;
-      if (pizza.toppings.pineapple > 0) {
-        if (pizza.toppings.pineapple == 0.25) {
-          secondQuarterTopping = PINEAPPLE_CHAR;
-          thirdQuarterTopping = EMPTY_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        } else if (pizza.toppings.pineapple == 0.5) {
-          secondQuarterTopping = PINEAPPLE_CHAR;
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        }
-      } else {
-        secondQuarterTopping = EMPTY_CHAR;
-        thirdQuarterTopping = EMPTY_CHAR;
-        fourthQuarterTopping = EMPTY_CHAR;
-      }
-    } else if (pizza.toppings.tomatoes == 0.5) {
-      firstQuarterTopping = TOMATOES_CHAR;
-      secondQuarterTopping = TOMATOES_CHAR;
-      if (pizza.toppings.pineapple > 0) {
-        if (pizza.toppings.pineapple == 0.25) {
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = EMPTY_CHAR;
-        } else if (pizza.toppings.pineapple == 0.5) {
-          thirdQuarterTopping = PINEAPPLE_CHAR;
-          fourthQuarterTopping = PINEAPPLE_CHAR;
-        }
-      } else {
-        thirdQuarterTopping = EMPTY_CHAR;
-        fourthQuarterTopping = EMPTY_CHAR;
-      }
-    } else if (pizza.toppings.tomatoes == 1) {
-      firstQuarterTopping = TOMATOES_CHAR;
-      secondQuarterTopping = TOMATOES_CHAR;
-      thirdQuarterTopping = TOMATOES_CHAR;
-      fourthQuarterTopping = TOMATOES_CHAR;
-    }
-  } else if (pizza.toppings.pineapple > 0) {
-    if (pizza.toppings.pineapple == 0.25) {
-      firstQuarterTopping = PINEAPPLE_CHAR;
-      secondQuarterTopping = EMPTY_CHAR;
-      thirdQuarterTopping = EMPTY_CHAR;
-      fourthQuarterTopping = EMPTY_CHAR;
-    } else if (pizza.toppings.pineapple == 0.5) {
-      firstQuarterTopping = PINEAPPLE_CHAR;
-      secondQuarterTopping = PINEAPPLE_CHAR;
-      thirdQuarterTopping = EMPTY_CHAR;
-      fourthQuarterTopping = EMPTY_CHAR;
-    } else if (pizza.toppings.pineapple == 1) {
-      firstQuarterTopping = PINEAPPLE_CHAR;
-      secondQuarterTopping = PINEAPPLE_CHAR;
-      thirdQuarterTopping = PINEAPPLE_CHAR;
-      fourthQuarterTopping = PINEAPPLE_CHAR;
-    }
-  } else {
-    firstQuarterTopping = EMPTY_CHAR;
-    secondQuarterTopping = EMPTY_CHAR;
-    thirdQuarterTopping = EMPTY_CHAR;
-    fourthQuarterTopping = EMPTY_CHAR;
-  }
+  toppingsByQuarters = getToppingRepresentationByQuarters(pizza);
 
   // Print first half of pizza
   for (i = 0; i < (pizza.length / 2); i++) {
@@ -870,12 +620,12 @@ void printPizzaPreview(struct Pizza pizza) {
 
       // Print 4th quarter topping
       for (j = 0; j < (pizza.width - 2) / 2; j++) {
-        printf("%c", fourthQuarterTopping);
+        printf("%c", toppingsByQuarters.fourth);
       }
 
       // Print 1st quarter topping
       for (j = 0; j < (pizza.width - 2) / 2; j++) {
-        printf("%c", firstQuarterTopping);
+        printf("%c", toppingsByQuarters.first);
       }
 
       // Print dough on margins (right)
@@ -900,12 +650,12 @@ void printPizzaPreview(struct Pizza pizza) {
 
       // Print 3rd quarter topping
       for (j = 0; j < (pizza.width - 2) / 2; j++) {
-        printf("%c", thirdQuarterTopping);
+        printf("%c", toppingsByQuarters.third);
       }
 
       // Print 2nd quarter topping
       for (j = 0; j < (pizza.width - 2) / 2; j++) {
-        printf("%c", secondQuarterTopping);
+        printf("%c", toppingsByQuarters.second);
       }
 
       // Print dough on margins (right)
@@ -1078,4 +828,112 @@ bool isEven(int number) {
 
 void printSeparator() {
   printf("*************************************************\n");
+}
+
+struct Quarters getToppingRepresentationByQuarters(struct Pizza pizza) {
+  struct Quarters quarters = {.first = EMPTY_CHAR, .second = EMPTY_CHAR, .third = EMPTY_CHAR, .fourth = EMPTY_CHAR};
+  double sumOfQuartersOnToppings = 0;
+
+  // TODO: Improve with for loop when arrays are available
+  quarters = addToppingToQuarter(pizza.toppings.olives, OLIVES_CHAR, quarters);
+  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+
+  if (sumOfQuartersOnToppings >= 1) {
+    return quarters;
+  }
+
+  quarters = addToppingToQuarter(pizza.toppings.mushrooms, MUSHROOMS_CHAR, quarters);
+  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+
+  if (sumOfQuartersOnToppings >= 1) {
+    return quarters;
+  }
+
+  quarters = addToppingToQuarter(pizza.toppings.tomatoes, TOMATOES_CHAR, quarters);
+  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+
+  if (sumOfQuartersOnToppings >= 1) {
+    return quarters;
+  }
+
+  quarters = addToppingToQuarter(pizza.toppings.pineapple, PINEAPPLE_CHAR, quarters);
+  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+
+  if (sumOfQuartersOnToppings >= 1) {
+    return quarters;
+  }
+
+  return quarters;
+}
+
+struct Quarters addToppingToQuarter(double toppingPortion, char toppingChar, struct Quarters quarters) {
+  int i;
+  int nextAvailableQuarter, numOfSequentQuarters;
+
+  if (toppingPortion == 0.25) {
+    numOfSequentQuarters = 1;
+    nextAvailableQuarter = findNextAvailableQuarter(quarters);
+  } else if (toppingPortion == 0.5) {
+    numOfSequentQuarters = 2;
+    nextAvailableQuarter = findNextAvailableQuarter(quarters);
+  } else if (toppingPortion == 1) {
+    numOfSequentQuarters = 4;
+    nextAvailableQuarter = 1;
+  } else {
+    return quarters;
+  }
+
+  // Add topping X to the next available quarter, for Y sequent quarters.
+  for (i = 0; i < numOfSequentQuarters; i++) {
+    quarters = placeToppingOnQuarter(quarters, nextAvailableQuarter, toppingChar);
+    nextAvailableQuarter += 1;
+  }
+
+  return quarters;
+}
+
+struct Quarters placeToppingOnQuarter(struct Quarters quarters, int quarterPlacement, char topping) {
+  switch (quarterPlacement) {
+    case 1:
+      quarters.first = topping;
+      break;
+    case 2:
+      quarters.second = topping;
+      break;
+    case 3:
+      quarters.third = topping;
+      break;
+    case 4:
+      quarters.fourth = topping;
+      break;
+    default:
+      printf("This is not an available quarter. Exiting due to failure.");
+      exit(EXIT_FAILURE);
+  }
+
+  return quarters;
+}
+
+int findNextAvailableQuarter(struct Quarters quarters) {
+  if (quarters.first == EMPTY_CHAR) {
+    return 1;
+  } else if (quarters.second == EMPTY_CHAR) {
+    return 2;
+  } else if (quarters.third == EMPTY_CHAR) {
+    return 3;
+  } else if (quarters.fourth == EMPTY_CHAR) {
+    return 4;
+  }
+
+  return -1;
+}
+
+double sumTotalQuarterToppings(struct Quarters quarters) {
+  double sum = 0;
+  sum += quarters.first != EMPTY_CHAR ? 0.25 : 0;
+  sum += quarters.second != EMPTY_CHAR ? 0.25 : 0;
+  sum += quarters.third != EMPTY_CHAR ? 0.25 : 0;
+  sum += quarters.fourth != EMPTY_CHAR ? 0.25 : 0;
+
+  return sum;
 }
