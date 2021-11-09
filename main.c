@@ -260,7 +260,6 @@ bool isValidCustomerIdCheckDigit(int customerId) {
 }
 
 void printMenu() {
-  // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
   printf("Our menu:\n"
          "*********\n"
          "Basic pizza: %.2f NIS for %dx%d size pizza\n\n",
@@ -310,14 +309,12 @@ void printHeaderForPizzaNumber(int pizzaNumber) {
 int getPizzaLengthFromInput() {
   int pizzaLength;
 
-  // TODO: Hope who reads this will make sure they will add the newline char back.
   printf("Please enter your pizza's length (cm): ");
   scanf("%d", &pizzaLength);
 
   while (!isValidPizzaLength(pizzaLength)) {
     printf("Invalid length! Try again.\n");
 
-    // TODO: Hope who reads this will make sure they will add the newline char back.
     printf("Please enter your pizza's length (cm): ");
     scanf("%d", &pizzaLength);
   }
@@ -415,7 +412,7 @@ float selectToppingForPizza(char toppingName[]) {
   return pizzaToppingPortion;
 }
 
-// TODO: Remove this when they will fix the wrong identation -_-
+// TODO: Remove this when they will fix the wrong indentation -_-
 float selectToppingForPizzaOnOverflow(char toppingName[]) {
   float pizzaToppingPortion;
 
@@ -484,7 +481,7 @@ float getValidToppingPortionByPortionsSum(float sumOfToppingsPortions, char topp
   while (!isValidToppingSum(sumOfToppingsPortions + toppingPortion)) {
     printf("You have exceeded the maximum amount of toppings allowed on one pizza! Try again.\n");
 
-    // TODO: Use the previous function, 'selectToppingForPizza' when they fix identation problems
+    // TODO: Use the previous function, 'selectToppingForPizza' when they fix indentation problems
     toppingPortion = selectToppingForPizzaOnOverflow(toppingName);
     toppingPortion = mapToppingPortionsToValues(toppingPortion);
   }
@@ -738,7 +735,6 @@ void printOrderSummaryForCustomerId(int customerId, int pizzasAmount, int delive
 int getPaymentInCashFromInput() {
   int customerPaymentAmountInNIS;
 
-  // TODO: Hope who reads this will make sure they will remove the newline char from the beggining.
   printf("Please enter your payment: ");
   scanf("%d", &customerPaymentAmountInNIS);
 
@@ -836,28 +832,28 @@ struct Quarters getToppingRepresentationByQuarters(struct Pizza pizza) {
 
   // TODO: Improve with for loop when arrays are available
   quarters = addToppingToQuarter(pizza.toppings.olives, OLIVES_CHAR, quarters);
-  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+  sumOfQuartersOnToppings = sumTotalQuarterToppings(quarters);
 
   if (sumOfQuartersOnToppings >= 1) {
     return quarters;
   }
 
   quarters = addToppingToQuarter(pizza.toppings.mushrooms, MUSHROOMS_CHAR, quarters);
-  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+  sumOfQuartersOnToppings = sumTotalQuarterToppings(quarters);
 
   if (sumOfQuartersOnToppings >= 1) {
     return quarters;
   }
 
   quarters = addToppingToQuarter(pizza.toppings.tomatoes, TOMATOES_CHAR, quarters);
-  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+  sumOfQuartersOnToppings = sumTotalQuarterToppings(quarters);
 
   if (sumOfQuartersOnToppings >= 1) {
     return quarters;
   }
 
   quarters = addToppingToQuarter(pizza.toppings.pineapple, PINEAPPLE_CHAR, quarters);
-  sumOfQuartersOnToppings += sumTotalQuarterToppings(quarters);
+  sumOfQuartersOnToppings = sumTotalQuarterToppings(quarters);
 
   if (sumOfQuartersOnToppings >= 1) {
     return quarters;
