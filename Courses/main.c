@@ -69,8 +69,6 @@ int main() {
   numberOfIntersectedCourses = intersectCoursesInfoAndReturnSize(firstSemesterCoursesInfo, numberOfFirstSemesterCourses,
                                                                  secondSemesterCoursesInfo,
                                                                  numberOfSecondSemesterCourses, intersectedCoursesInfo);
-  sortAscending(unifiedCoursesInfo, numberOfUnifiedCourses);
-  sortAscending(intersectedCoursesInfo, numberOfIntersectedCourses);
 
   printUnifiedCoursesNumber(unifiedCoursesInfo, numberOfUnifiedCourses);
   printIntersectedCoursesNumber(intersectedCoursesInfo, numberOfIntersectedCourses);
@@ -131,51 +129,71 @@ void printCoursesBySemester(char semester, COURSE_INFO semesterCoursesInfo[], in
   printf("Course# Grade\n");
   printf("======= =====\n");
   for (int i = 0; i < numberOfCourses; i++) {
-    printf("%d %d\n", semesterCoursesInfo[i].courseNumber, semesterCoursesInfo[i].grade);
+    printf("%d\t%d\n", semesterCoursesInfo[i].courseNumber, semesterCoursesInfo[i].grade);
   }
   printf("\n");
 }
 
-// Unify coursesInfoA and coursesInfoB and return unifiedCoursesInfoSize. Complexity: O(n^2)
+// Unify coursesInfoA and coursesInfoB and return unifiedCoursesInfoSize. Complexity: O(n + m)
 int unifyCoursesInfoAndReturnSize(COURSE_INFO coursesInfoA[], int numberOfCoursesA, COURSE_INFO coursesInfoB[],
                                   int numberOfCoursesB, int unifiedCoursesInfo[]) {
-  int i, j;
+  int i = 0, j = 0;
   int unifiedCoursesInfoIndex = 0;
+  int courseNumberA, courseNumberB;
 
-  // Fill unifiedCoursesInfo with coursesInfoA course numbers
-  for (i = 0; i < numberOfCoursesA; i++) {
-    unifiedCoursesInfo[unifiedCoursesInfoIndex] = coursesInfoA[i].courseNumber;
+  while (i < numberOfCoursesA && j < numberOfCoursesB) {
+    courseNumberA = coursesInfoA[i].courseNumber;
+    courseNumberB = coursesInfoB[j].courseNumber;
+
+    if (courseNumberA == courseNumberB) {
+      unifiedCoursesInfo[unifiedCoursesInfoIndex] = courseNumberA;
+      i++;
+      j++;
+    } else if (courseNumberA < courseNumberB) {
+      unifiedCoursesInfo[unifiedCoursesInfoIndex] = courseNumberA;
+      i++;
+    } else {
+      unifiedCoursesInfo[unifiedCoursesInfoIndex] = courseNumberB;
+      j++;
+    }
     unifiedCoursesInfoIndex++;
   }
 
-  // Fill unifiedCoursesInfo with coursesInfoB course numbers, if course number is not in unifiedCoursesInfo
-  for (i = 0; i < numberOfCoursesB; i++) {
-    for (j = 0; j < unifiedCoursesInfoIndex; j++) {
-      if (coursesInfoB[i].courseNumber == unifiedCoursesInfo[j]) {
-        break;
-      } else if (j == unifiedCoursesInfoIndex - 1) {
-        unifiedCoursesInfo[unifiedCoursesInfoIndex] = coursesInfoB[i].courseNumber;
-        unifiedCoursesInfoIndex++;
-      }
+  if (i < numberOfCoursesA) {
+    for (i; i < numberOfCoursesA; i++) {
+      unifiedCoursesInfo[unifiedCoursesInfoIndex] = coursesInfoA[i].courseNumber;
+      unifiedCoursesInfoIndex++;
+    }
+  } else if (j < numberOfCoursesB) {
+    for (j; j < numberOfCoursesB; j++) {
+      unifiedCoursesInfo[unifiedCoursesInfoIndex] = coursesInfoB[j].courseNumber;
+      unifiedCoursesInfoIndex++;
     }
   }
 
   return unifiedCoursesInfoIndex;
 }
 
-// Intersect coursesInfoA and coursesInfoB and fill intersectedCoursesInfo. Complexity: O(n^2)
+// Intersect coursesInfoA and coursesInfoB and fill intersectedCoursesInfo. Complexity: O(n + m)
 int intersectCoursesInfoAndReturnSize(COURSE_INFO coursesInfoA[], int numberOfCoursesA, COURSE_INFO coursesInfoB[],
                                       int numberOfCoursesB, int intersectedCoursesInfo[]) {
-  int i, j;
+  int i = 0, j = 0;
   int intersectedCoursesInfoIndex = 0;
+  int courseNumberA, courseNumberB;
 
-  // Fill intersectedCoursesInfo with coursesInfoA course numbers, if course number is in coursesInfoB
-  for (i = 0; i < numberOfCoursesA; i++) {
-    for (j = 0; j < numberOfCoursesB; j++) {
-      if (coursesInfoA[i].courseNumber == coursesInfoB[j].courseNumber) {
-        intersectedCoursesInfo[intersectedCoursesInfoIndex] = coursesInfoA[i].courseNumber;
-        intersectedCoursesInfoIndex++;
-      }
+  while (i < numberOfCoursesA && j < numberOfCoursesB) {
+    courseNumberA = coursesInfoA[i].courseNumber;
+    courseNumberB = coursesInfoB[j].courseNumber;
+
+    if (courseNumberA == courseNumberB) {
+      intersectedCoursesInfo[intersectedCoursesInfoIndex] = courseNumberA;
+      intersectedCoursesInfoIndex++;
+      i++;
+      j++;
+    } else if (courseNumberA < courseNumberB) {
+      i++;
+    } else {
+      j++;
     }
   }
 
@@ -302,6 +320,7 @@ int findIndexOfSequentFailPass(int excercisesGrades[], int numberOfExcercises) {
   return -1;
 }
 
+// Reorder grades by limit. Complexity: O(n^2)
 int reorderGradesByLimit(int exercisesGrades[], int numberOfExercises, int limit) {
   int i, j;
   int numberOfGradesLowerThanLimit = 0;
