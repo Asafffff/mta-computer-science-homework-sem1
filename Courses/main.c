@@ -1,15 +1,15 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h> // FIXME: remove
 #include <stdlib.h>
 #include <string.h>
 #define SEMESTER_A 'A'
 #define SEMESTER_B 'B'
-#define MAXIMUM_NUMBER_OF_EXERCISES 13
-#define MINIMUM_NUMBER_OF_EXERCISES 2
-#define AVERAGE_SIZE_OF_EXERCISE_GRADES 3
-#define PASSING_GRADE_THRESHOLD '6'
-#define FIXED_FIRST_GRADE 30
-#define FIXED_LAST_GRADE 100
+#define NUMBER_OF_STUDENTS_IN_A_GROUP 3 // TODO Change to 6
+#define MAXIMUM_OF_NUMBER_GRADES_IN_TABLE 5
+#define MAXIMUM_STUDENT_NAME_LENGTH 21
+#define MAXIMUM_GROUP_NAME_LENGTH 6
+#define MAXIMUM_NUMBER_OF_COURSES 10
 #define PASSING_GRADE 60
 
 struct CourseInfo {
@@ -18,341 +18,348 @@ struct CourseInfo {
 };
 typedef struct CourseInfo COURSE_INFO;
 
+struct Student {
+  char fullName[MAXIMUM_STUDENT_NAME_LENGTH];
+  int identityNumber;
+  int numberOfCoursesInSemesterA;
+  COURSE_INFO courseInfo[MAXIMUM_NUMBER_OF_COURSES];
+};
+typedef struct Student STUDENT;
+
 void printWelcomeMessage();
-int getNumberOfCoursesFromInput(char semester);
 void getCourseInfo(COURSE_INFO semesterCoursesInfo[], int numberOfCourses);
-void integerSwapAtIndex(int array[], int index1, int index2);
-void sortCoursesByCourseNumber(COURSE_INFO semesterCoursesInfo[], int numberOfCourses);
-void printCoursesBySemester(char semester, COURSE_INFO semesterCoursesInfo[], int numberOfCourses);
-int unifyCoursesInfoAndReturnSize(COURSE_INFO coursesInfoA[], int numberOfCoursesA, COURSE_INFO coursesInfoB[],
-                                  int numberOfCoursesB, int unifiedCoursesInfo[]);
-int intersectCoursesInfoAndReturnSize(COURSE_INFO coursesInfoA[], int numberOfCoursesA, COURSE_INFO coursesInfoB[],
-                                      int numberOfCoursesB, int intersectedCoursesInfo[]);
-void sortAscending(int array[], int size);
-void printUnifiedCoursesNumber(int unifiedCoursesInfo[], int unifiedCoursesInfoSize);
-void printIntersectedCoursesNumber(int intersectedCoursesInfo[], int intersectedCoursesInfoSize);
-COURSE_INFO findMinimumGrade(COURSE_INFO semesterCoursesInfo[], int numberOfCourses);
-void getExcercisesGradesFromCourse(int courseNumber, int grade);
-void buildExcercisesGradesByNumberOfExercises(int exericesGrades[], int numberOfExercises);
-void printExcercisesGrades(int exericesGrades[], int numberOfExercises);
-void changeGradeAtIndexTo(int excercisesGrades[], int index, int grade);
-int findIndexOfSequentFailPass(int excercisesGrades[], int numberOfExcercises);
-int reorderGradesByLimit(int exercisesGrades[], int numberOfExercises, int limit);
-void printArrayValuesUpToLimit(int array[], int limit);
+void addStudentsToGroups(STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN_A_GROUP], int numberOfSubGroups,
+                         int numberOfStudents);
+STUDENT getStudentInfoFromInput();
+int getNumberOfStudentNamesByCourseNumberAndPrintThem(
+    STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN_A_GROUP], int numberOfSubGroups, int numberOfStudents,
+    int courseNumber, char studentNames[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH]);
+char getGroupNameByIndex(int index);
+int getCourseNumberFromInput();
+void switchNamesWithLoisToLaneAndPrintThem(char studentNames[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH],
+                                           int numberOfStudents);
+void deleteNamesWithLexAndPrintThem(char studentNames[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH],
+                                    int numberOfStudents);
+void getStudentGradesByCourseNumberAndPrintThem(STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN_A_GROUP],
+                                                int numberOfSubGroups, int numberOfStudents, int courseNumber,
+                                                int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE]);
+void searchMaximumGradePerGroup(int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE], int numberOfSubGroups,
+                                int maximumNumberOfGradesInTable);
 
 int main() {
-  int numberOfFirstSemesterCourses, numberOfSecondSemesterCourses;
-  COURSE_INFO firstSemesterCoursesInfo[10], secondSemesterCoursesInfo[10];
-
-  int numberOfUnifiedCourses, numberOfIntersectedCourses;
-  int unifiedCoursesInfo[20], intersectedCoursesInfo[20];
-
-  COURSE_INFO minimumGradeCourse;
+  const int numberOfSubGroups = 3, numberOfStudentsInAGroup = NUMBER_OF_STUDENTS_IN_A_GROUP;
+  int courseNumber, numberOfStudentsInCourse;
+  STUDENT groupOfGroupsOfStudents[numberOfSubGroups][numberOfStudentsInAGroup];
+  char studentNames[numberOfSubGroups * numberOfStudentsInAGroup]
+                   [MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH];
+  int studentGrades[numberOfSubGroups][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE];
 
   printWelcomeMessage();
+  addStudentsToGroups(groupOfGroupsOfStudents, numberOfSubGroups, numberOfStudentsInAGroup);
 
-  numberOfFirstSemesterCourses = getNumberOfCoursesFromInput(SEMESTER_A);
-  getCourseInfo(firstSemesterCoursesInfo, numberOfFirstSemesterCourses);
+  courseNumber = getCourseNumberFromInput();
+  printf("Names of students in course#%d:\n", courseNumber);
 
-  numberOfSecondSemesterCourses = getNumberOfCoursesFromInput(SEMESTER_B);
-  getCourseInfo(secondSemesterCoursesInfo, numberOfSecondSemesterCourses);
+  numberOfStudentsInCourse = getNumberOfStudentNamesByCourseNumberAndPrintThem(
+      groupOfGroupsOfStudents, numberOfSubGroups, numberOfStudentsInAGroup, courseNumber, studentNames);
 
-  sortCoursesByCourseNumber(firstSemesterCoursesInfo, numberOfFirstSemesterCourses);
-  sortCoursesByCourseNumber(secondSemesterCoursesInfo, numberOfSecondSemesterCourses);
+  switchNamesWithLoisToLaneAndPrintThem(studentNames, numberOfStudentsInCourse);
+  deleteNamesWithLexAndPrintThem(studentNames, numberOfStudentsInCourse);
 
-  printCoursesBySemester(SEMESTER_A, firstSemesterCoursesInfo, numberOfFirstSemesterCourses);
-  printCoursesBySemester(SEMESTER_B, secondSemesterCoursesInfo, numberOfSecondSemesterCourses);
+  printf("\nGrades in course #%d\n", courseNumber);
+  getStudentGradesByCourseNumberAndPrintThem(groupOfGroupsOfStudents, numberOfSubGroups, numberOfStudentsInAGroup,
+                                             courseNumber, studentGrades);
 
-  numberOfUnifiedCourses =
-      unifyCoursesInfoAndReturnSize(firstSemesterCoursesInfo, numberOfFirstSemesterCourses, secondSemesterCoursesInfo,
-                                    numberOfSecondSemesterCourses, unifiedCoursesInfo);
-  numberOfIntersectedCourses = intersectCoursesInfoAndReturnSize(firstSemesterCoursesInfo, numberOfFirstSemesterCourses,
-                                                                 secondSemesterCoursesInfo,
-                                                                 numberOfSecondSemesterCourses, intersectedCoursesInfo);
-
-  printUnifiedCoursesNumber(unifiedCoursesInfo, numberOfUnifiedCourses);
-  printIntersectedCoursesNumber(intersectedCoursesInfo, numberOfIntersectedCourses);
-
-  minimumGradeCourse = findMinimumGrade(firstSemesterCoursesInfo, numberOfFirstSemesterCourses);
-  printf("\n\nMinimum grade in semester %c is: %d in course #%d\n", SEMESTER_A, minimumGradeCourse.grade,
-         minimumGradeCourse.courseNumber);
-
-  getExcercisesGradesFromCourse(minimumGradeCourse.courseNumber, minimumGradeCourse.grade);
+  printf("\nMaximum grades in course #%d\n", courseNumber);
+  searchMaximumGradePerGroup(studentGrades, numberOfSubGroups, MAXIMUM_OF_NUMBER_GRADES_IN_TABLE);
 
   return 0;
 }
 
 void printWelcomeMessage() {
-  printf(" Welcome students!!\n"
-         "and bye bye Pizzeria\n\n");
-}
-
-// Get number of courses from user input
-int getNumberOfCoursesFromInput(char semester) {
-  int numberOfCourses;
-  printf("Please enter number of courses in semester %c: \n", semester);
-  scanf("%d", &numberOfCourses);
-  return numberOfCourses;
+  printf("********************\n"
+         "* Welcome Students *\n"
+         "********************\n\n");
 }
 
 void getCourseInfo(COURSE_INFO semesterCoursesInfo[], int numberOfCourses) {
   for (int i = 0; i < numberOfCourses; i++) {
-    printf("Enter course number and grade:\n");
+    printf("Enter course number and grade: ");
     scanf("%d %d", &semesterCoursesInfo[i].courseNumber, &semesterCoursesInfo[i].grade);
   }
 }
 
-void integerSwapAtIndex(int array[], int index1, int index2) {
-  int temp = array[index1];
-  array[index1] = array[index2];
-  array[index2] = temp;
+/**
+ * @brief
+ * groupOfGroupsOfStudents = groupOfGroupsOfStudents
+ * groupOfStudents = groupOfGroupsOfStudents[i]
+ * student = groupOfGroupsOfStudents[i][j]
+ *
+ * @param groupOfGroupsOfStudents
+ * @param numberOfStudents
+ */
+void addStudentsToGroups(STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN_A_GROUP], int numberOfSubGroups,
+                         int numberOfStudents) {
+  int i, j;
+  char groupName;
+
+  // Loop through sub groups
+  for (i = 0; i < numberOfSubGroups; i++) {
+    groupName = getGroupNameByIndex(i);
+
+    printf("Enter students data for GROUP %c:\n", groupName);
+    printf("---------------------------------\n");
+
+    // Loop through students of sub groups
+    for (j = 0; j < numberOfStudents; j++) {
+      groupOfGroupsOfStudents[i][j] = getStudentInfoFromInput();
+    }
+  }
 }
 
-// Sort courses by course number using bubble sort. Complexity: O(n^2)
-void sortCoursesByCourseNumber(COURSE_INFO semesterCoursesInfo[], int numberOfCourses) {
-  int i, j;
-  COURSE_INFO tempCourseInfo;
+STUDENT getStudentInfoFromInput() {
+  // FIXME - Remove
+  int r = rand() % 5;
+  STUDENT student = {
+      .fullName = "Lois Noir",
+      .identityNumber = 0,
+      .numberOfCoursesInSemesterA = 1,
+      .courseInfo[0].courseNumber = 10,
+      .courseInfo[0].grade = 10,
+  };
 
-  for (i = 0; i < numberOfCourses - 1; i++) {
-    for (j = 0; j < numberOfCourses - i - 1; j++) {
-      if (semesterCoursesInfo[j].courseNumber > semesterCoursesInfo[j + 1].courseNumber) {
-        tempCourseInfo = semesterCoursesInfo[j];
-        semesterCoursesInfo[j] = semesterCoursesInfo[j + 1];
-        semesterCoursesInfo[j + 1] = tempCourseInfo;
+  STUDENT student2 = {
+      .fullName = "Gur Lex",
+      .identityNumber = 1,
+      .numberOfCoursesInSemesterA = 1,
+      .courseInfo[0].courseNumber = 10,
+      .courseInfo[0].grade = 20,
+  };
+
+  STUDENT student3 = {
+      .fullName = "Natali Mor",
+      .identityNumber = 2,
+      .numberOfCoursesInSemesterA = 1,
+      .courseInfo[0].courseNumber = 10,
+      .courseInfo[0].grade = 30,
+  };
+
+  STUDENT student4 = {
+      .fullName = "Amit Gurevich",
+      .identityNumber = 3,
+      .numberOfCoursesInSemesterA = 1,
+      .courseInfo[0].courseNumber = 10,
+      .courseInfo[0].grade = 50,
+  };
+
+  STUDENT student5 = {
+      .fullName = "Lois Lois",
+      .identityNumber = 4,
+      .numberOfCoursesInSemesterA = 1,
+      .courseInfo[0].courseNumber = 10,
+      .courseInfo[0].grade = 40,
+  };
+
+  switch (r) {
+    case 0:
+      return student;
+    case 1:
+      return student2;
+    case 2:
+      return student3;
+    case 3:
+      return student4;
+    case 4:
+      return student5;
+    default:
+      return student;
+  }
+  // STUDENT student;
+  // char firstName[(int)MAXIMUM_STUDENT_NAME_LENGTH / 2], lastName[(int)MAXIMUM_STUDENT_NAME_LENGTH / 2];
+
+  // printf("Enter student first name and last name (seperated by spaces): ");
+  // scanf("%s %s", firstName, lastName);
+
+  // strcat(firstName, " ");
+  // strcat(firstName, lastName);
+  // strcpy(student.fullName, firstName);
+
+  // printf("Enter student ID: ");
+  // scanf("%d", &student.identityNumber);
+
+  // printf("Enter number of courses taken in semester A: ");
+  // scanf("%d", &student.numberOfCoursesInSemesterA);
+
+  // getCourseInfo(student.courseInfo, student.numberOfCoursesInSemesterA);
+  // printf("\n");
+
+  return student;
+}
+
+int getNumberOfStudentNamesByCourseNumberAndPrintThem(
+    STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN_A_GROUP], int numberOfSubGroups, int numberOfStudents,
+    int courseNumber, char studentNames[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH]) {
+  int i, j, k, l;
+  int numberOfStudentsInCourse, studentNamesIndex = 0;
+  char currentGroupName;
+  char fullGroupNameAsString[] = "GroupX";
+  char fullNameWithGroupPrefix[MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH];
+
+  for (i = 0; i < numberOfSubGroups; i++) {
+    currentGroupName = getGroupNameByIndex(i);
+    fullGroupNameAsString[MAXIMUM_GROUP_NAME_LENGTH - 1] = currentGroupName;
+    for (j = 0; j < numberOfStudents; j++) {
+      // Reset fullNameWithGroupPrefix to an empty string
+      for (l = 0; l < MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH; l++) {
+        fullNameWithGroupPrefix[l] = '\0';
       }
-    }
-  }
-}
+      STUDENT currentStudent = groupOfGroupsOfStudents[i][j];
+      for (k = 0; k < currentStudent.numberOfCoursesInSemesterA; k++) {
+        if (currentStudent.courseInfo[k].courseNumber == courseNumber) {
+          // Copy student name in the format of 'GroupX studentName'
+          strcat(fullNameWithGroupPrefix, fullGroupNameAsString);
+          strcat(fullNameWithGroupPrefix, " ");
+          strcat(fullNameWithGroupPrefix, currentStudent.fullName);
+          strcpy(studentNames[studentNamesIndex], fullNameWithGroupPrefix);
 
-void printCoursesBySemester(char semester, COURSE_INFO semesterCoursesInfo[], int numberOfCourses) {
-  printf("Sorted courses of semester %c:\n", semester);
-  printf("Course# Grade\n");
-  printf("======= =====\n");
-  for (int i = 0; i < numberOfCourses; i++) {
-    printf("%d\t%d\n", semesterCoursesInfo[i].courseNumber, semesterCoursesInfo[i].grade);
-  }
-  printf("\n");
-}
-
-// Unify coursesInfoA and coursesInfoB and return unifiedCoursesInfoSize. Complexity: O(n + m)
-int unifyCoursesInfoAndReturnSize(COURSE_INFO coursesInfoA[], int numberOfCoursesA, COURSE_INFO coursesInfoB[],
-                                  int numberOfCoursesB, int unifiedCoursesInfo[]) {
-  int i = 0, j = 0;
-  int unifiedCoursesInfoIndex = 0;
-  int courseNumberA, courseNumberB;
-
-  while (i < numberOfCoursesA && j < numberOfCoursesB) {
-    courseNumberA = coursesInfoA[i].courseNumber;
-    courseNumberB = coursesInfoB[j].courseNumber;
-
-    if (courseNumberA == courseNumberB) {
-      unifiedCoursesInfo[unifiedCoursesInfoIndex] = courseNumberA;
-      i++;
-      j++;
-    } else if (courseNumberA < courseNumberB) {
-      unifiedCoursesInfo[unifiedCoursesInfoIndex] = courseNumberA;
-      i++;
-    } else {
-      unifiedCoursesInfo[unifiedCoursesInfoIndex] = courseNumberB;
-      j++;
-    }
-    unifiedCoursesInfoIndex++;
-  }
-
-  if (i < numberOfCoursesA) {
-    for (i; i < numberOfCoursesA; i++) {
-      unifiedCoursesInfo[unifiedCoursesInfoIndex] = coursesInfoA[i].courseNumber;
-      unifiedCoursesInfoIndex++;
-    }
-  } else if (j < numberOfCoursesB) {
-    for (j; j < numberOfCoursesB; j++) {
-      unifiedCoursesInfo[unifiedCoursesInfoIndex] = coursesInfoB[j].courseNumber;
-      unifiedCoursesInfoIndex++;
-    }
-  }
-
-  return unifiedCoursesInfoIndex;
-}
-
-// Intersect coursesInfoA and coursesInfoB and fill intersectedCoursesInfo. Complexity: O(n + m)
-int intersectCoursesInfoAndReturnSize(COURSE_INFO coursesInfoA[], int numberOfCoursesA, COURSE_INFO coursesInfoB[],
-                                      int numberOfCoursesB, int intersectedCoursesInfo[]) {
-  int i = 0, j = 0;
-  int intersectedCoursesInfoIndex = 0;
-  int courseNumberA, courseNumberB;
-
-  while (i < numberOfCoursesA && j < numberOfCoursesB) {
-    courseNumberA = coursesInfoA[i].courseNumber;
-    courseNumberB = coursesInfoB[j].courseNumber;
-
-    if (courseNumberA == courseNumberB) {
-      intersectedCoursesInfo[intersectedCoursesInfoIndex] = courseNumberA;
-      intersectedCoursesInfoIndex++;
-      i++;
-      j++;
-    } else if (courseNumberA < courseNumberB) {
-      i++;
-    } else {
-      j++;
-    }
-  }
-
-  return intersectedCoursesInfoIndex;
-}
-
-// Sort algorithem: Bubble Sort. Complexity: O(n^2)
-void sortAscending(int array[], int size) {
-  int i, j;
-
-  for (i = 0; i < size - 1; i++) {
-    for (j = 0; j < size - i - 1; j++) {
-      if (array[j] > array[j + 1]) {
-        integerSwapAtIndex(array, j, j + 1);
-      }
-    }
-  }
-}
-
-void printUnifiedCoursesNumber(int unifiedCoursesInfo[], int unifiedCoursesInfoSize) {
-  printf("\ncourses taken in semester A or semester B: ");
-  for (int i = 0; i < unifiedCoursesInfoSize; i++) {
-    printf("%d ", unifiedCoursesInfo[i]);
-  }
-}
-
-void printIntersectedCoursesNumber(int intersectedCoursesInfo[], int intersectedCoursesInfoSize) {
-  printf("\ncourses taken in semester A and semester B: ");
-  for (int i = 0; i < intersectedCoursesInfoSize; i++) {
-    printf("%d ", intersectedCoursesInfo[i]);
-  }
-}
-
-COURSE_INFO findMinimumGrade(COURSE_INFO semesterCoursesInfo[], int numberOfCourses) {
-  COURSE_INFO minimumGradeCourseInfo;
-  minimumGradeCourseInfo.courseNumber = -1;
-  minimumGradeCourseInfo.grade = -1;
-
-  for (int i = 0; i < numberOfCourses; i++) {
-    if ((semesterCoursesInfo[i].grade < minimumGradeCourseInfo.grade ||
-         (semesterCoursesInfo[i].grade == minimumGradeCourseInfo.grade &&
-          semesterCoursesInfo[i].courseNumber < minimumGradeCourseInfo.courseNumber)) ||
-        minimumGradeCourseInfo.courseNumber == -1) {
-      minimumGradeCourseInfo.courseNumber = semesterCoursesInfo[i].courseNumber;
-      minimumGradeCourseInfo.grade = semesterCoursesInfo[i].grade;
-    }
-  }
-
-  return minimumGradeCourseInfo;
-}
-
-void getExcercisesGradesFromCourse(int courseNumber, int grade) {
-  int numberOfExcercises, indexOfFailPass;
-  int limitGrade, numberOfGradesLowerThanLimit;
-
-  printf("How many exercises were given in course #%d? \n", courseNumber);
-  scanf("%d", &numberOfExcercises);
-
-  if (numberOfExcercises > MAXIMUM_NUMBER_OF_EXERCISES) {
-    numberOfExcercises = MAXIMUM_NUMBER_OF_EXERCISES;
-  } else if (numberOfExcercises < MINIMUM_NUMBER_OF_EXERCISES) {
-    numberOfExcercises = MINIMUM_NUMBER_OF_EXERCISES;
-  }
-
-  int excercisesGrades[numberOfExcercises];
-
-  printf("Enter exercises grades: \n");
-  buildExcercisesGradesByNumberOfExercises(excercisesGrades, numberOfExcercises);
-
-  changeGradeAtIndexTo(excercisesGrades, 0, FIXED_FIRST_GRADE);
-  changeGradeAtIndexTo(excercisesGrades, numberOfExcercises - 1, FIXED_LAST_GRADE);
-
-  printExcercisesGrades(excercisesGrades, numberOfExcercises);
-
-  indexOfFailPass = findIndexOfSequentFailPass(excercisesGrades, numberOfExcercises);
-  printf("Index of Fail-Pass is: %d\n", indexOfFailPass);
-
-  printf("Please enter a limit grade: \n");
-  scanf("%d", &limitGrade);
-  numberOfGradesLowerThanLimit = reorderGradesByLimit(excercisesGrades, numberOfExcercises, limitGrade);
-  printf("After reordering grades, the grades smaller than %d are: ", limitGrade);
-  printArrayValuesUpToLimit(excercisesGrades, numberOfGradesLowerThanLimit);
-
-  return;
-}
-
-void buildExcercisesGradesByNumberOfExercises(int exericesGrades[], int numberOfExercises) {
-  int i = 0;
-
-  while (i < numberOfExercises) {
-    scanf("%d", &exericesGrades[i]);
-    i++;
-  }
-
-  return;
-}
-
-void printExcercisesGrades(int exericesGrades[], int numberOfExercises) {
-  int i;
-
-  printf("Exercise grades: ");
-  for (int i = 0; i < numberOfExercises; i++) {
-    printf("%d ", exericesGrades[i]);
-  }
-  printf("\n");
-}
-
-void changeGradeAtIndexTo(int excercisesGrades[], int index, int grade) {
-  excercisesGrades[index] = grade;
-}
-
-// Find index of sequest fail or pass by grade. Complexity: O(log(n))
-int findIndexOfSequentFailPass(int excercisesGrades[], int numberOfExcercises) {
-  int leftIndex = 0, rightIndex = numberOfExcercises - 1;
-  int middleIndex;
-
-  while (leftIndex <= rightIndex) {
-    middleIndex = (int)((leftIndex + rightIndex) / 2);
-
-    if (excercisesGrades[middleIndex] < PASSING_GRADE && excercisesGrades[middleIndex + 1] >= PASSING_GRADE) {
-      return middleIndex;
-    } else if (excercisesGrades[middleIndex] >= PASSING_GRADE) {
-      rightIndex = middleIndex - 1;
-    } else {
-      leftIndex = middleIndex + 1;
-    }
-  }
-
-  return -1;
-}
-
-// Reorder grades by limit. Complexity: O(n^2)
-int reorderGradesByLimit(int exercisesGrades[], int numberOfExercises, int limit) {
-  int i, j;
-  int numberOfGradesLowerThanLimit = 0;
-
-  for (i = 0; i < numberOfExercises; i++) {
-    if (exercisesGrades[i] >= limit) {
-      for (j = i + 1; j < numberOfExercises; j++) {
-        if (exercisesGrades[j] < limit) {
-          integerSwapAtIndex(exercisesGrades, i, j);
-          numberOfGradesLowerThanLimit++;
-          break;
+          printf("%s\n", studentNames[studentNamesIndex]);
+          studentNamesIndex++;
         }
       }
-    } else {
-      numberOfGradesLowerThanLimit++;
     }
   }
 
-  return numberOfGradesLowerThanLimit;
+  numberOfStudentsInCourse = studentNamesIndex;
+
+  return numberOfStudentsInCourse;
 }
 
-void printArrayValuesUpToLimit(int array[], int limit) {
-  int i;
+char getGroupNameByIndex(int index) {
+  char groupName;
 
-  for (i = 0; i < limit; i++) {
-    printf("%d ", array[i]);
+  switch (index) {
+    case 0:
+      groupName = 'A';
+      break;
+    case 1:
+      groupName = 'B';
+      break;
+    case 2:
+      groupName = 'C';
+      break;
+    default:
+      break;
   }
 
-  return;
+  return groupName;
+}
+
+int getCourseNumberFromInput() {
+  int courseNumber;
+
+  // FIXME
+  courseNumber = 10;
+  // printf("Enter a course number: ");
+  // scanf("%d", &courseNumber);
+
+  return courseNumber;
+}
+
+void switchNamesWithLoisToLaneAndPrintThem(char studentNames[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH],
+                                           int numberOfStudents) {
+  int i, j;
+
+  printf("\nNames after changing \"Lois\" to \"Lane\":\n");
+  for (i = 0; i < numberOfStudents; i++) {
+    for (j = 0; j < (int)(strlen(studentNames[i]) - 3); j++) {
+      if (studentNames[i][j] == 'L' && studentNames[i][j + 1] == 'o' && studentNames[i][j + 2] == 'i' &&
+          studentNames[i][j + 3] == 's') {
+        studentNames[i][j] = 'L';
+        studentNames[i][j + 1] = 'a';
+        studentNames[i][j + 2] = 'n';
+        studentNames[i][j + 3] = 'e';
+        j += 3;
+      }
+    }
+    printf("%s\n", studentNames[i]);
+  }
+}
+
+void deleteNamesWithLexAndPrintThem(char studentNames[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH],
+                                    int numberOfStudents) {
+  int i, j, l, k, m;
+  int numberOfDeletedNames = 0;
+
+  printf("\nNames after deleting names with \"Lex\":\n");
+  for (i = 0; i < numberOfStudents; i++) {
+    for (j = 0; j < (int)(strlen(studentNames[i]) - 2); j++) {
+      if (studentNames[i][j] == 'L' && studentNames[i][j + 1] == 'e' && studentNames[i][j + 2] == 'x') {
+        for (l = i; l < numberOfStudents - 1; l++) {
+          strcpy(studentNames[l], studentNames[l + 1]);
+        }
+        numberOfDeletedNames++;
+      }
+    }
+    if (i < numberOfStudents - numberOfDeletedNames) {
+      printf("%s\n", studentNames[i]);
+    }
+  }
+
+  for (k = 0; k < numberOfDeletedNames; k++) {
+    for (m = 0; m < MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH; m++) {
+      studentNames[numberOfStudents - 1 - k][m] = '\0';
+    }
+  }
+}
+
+void getStudentGradesByCourseNumberAndPrintThem(STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN_A_GROUP],
+                                                int numberOfSubGroups, int numberOfStudents, int courseNumber,
+                                                int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE]) {
+  int i, j, k, l;
+  int numberOfStudentsInCourseByGroup;
+  char currentGroupName;
+
+  for (i = 0; i < numberOfSubGroups; i++) {
+    numberOfStudentsInCourseByGroup = 0;
+    currentGroupName = getGroupNameByIndex(i);
+    for (j = 0; j < numberOfStudents; j++) {
+      STUDENT currentStudent = groupOfGroupsOfStudents[i][j];
+      for (k = 0; k < currentStudent.numberOfCoursesInSemesterA; k++) {
+        if (currentStudent.courseInfo[k].courseNumber == courseNumber) {
+          studentGrades[i][numberOfStudentsInCourseByGroup + 1] = currentStudent.courseInfo[k].grade;
+          numberOfStudentsInCourseByGroup++;
+        }
+      }
+    }
+    studentGrades[i][0] = numberOfStudentsInCourseByGroup;
+    printf("Group%c: ", currentGroupName);
+    for (l = 0; l < numberOfStudentsInCourseByGroup; l++) {
+      printf("%d ", studentGrades[i][l + 1]);
+    }
+    printf("\n");
+  }
+}
+
+void searchMaximumGradePerGroup(int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE], int numberOfSubGroups,
+                                int maximumNumberOfGradesInTable) {
+  int i, j;
+  int firstMaximumGrade;
+  int secondMaximumGrade;
+  char currentGroupName;
+
+  for (i = 0; i < numberOfSubGroups; i++) {
+    currentGroupName = getGroupNameByIndex(i);
+    firstMaximumGrade = -1;
+
+    for (j = 0; j < maximumNumberOfGradesInTable; j++) {
+      if (studentGrades[i][j] > firstMaximumGrade) {
+        secondMaximumGrade = firstMaximumGrade;
+        firstMaximumGrade = studentGrades[i][j];
+      } else if (studentGrades[i][j] < firstMaximumGrade && studentGrades[i][j] > secondMaximumGrade) {
+        secondMaximumGrade = studentGrades[i][j];
+      }
+    }
+    printf("Group%c: max grade is: %d and second max is: %d\n", currentGroupName, firstMaximumGrade,
+           secondMaximumGrade);
+  }
 }
