@@ -305,15 +305,20 @@ void changeGradeAtIndexTo(int excercisesGrades[], int index, int grade) {
   excercisesGrades[index] = grade;
 }
 
-// Find index of sequest fail or pass by grade. Complexity: O(n)
+// Find index of sequest fail or pass by grade. Complexity: O(log(n))
 int findIndexOfSequentFailPass(int excercisesGrades[], int numberOfExcercises) {
-  int i;
+  int leftIndex = 0, rightIndex = numberOfExcercises - 1;
+  int middleIndex;
 
-  for (i = 0; i < numberOfExcercises - 1; i++) {
-    if (excercisesGrades[i] < PASSING_GRADE) {
-      if (excercisesGrades[i + 1] >= PASSING_GRADE) {
-        return i;
-      }
+  while (leftIndex <= rightIndex) {
+    middleIndex = (int)((leftIndex + rightIndex) / 2);
+
+    if (excercisesGrades[middleIndex] < PASSING_GRADE && excercisesGrades[middleIndex + 1] >= PASSING_GRADE) {
+      return middleIndex;
+    } else if (excercisesGrades[middleIndex] >= PASSING_GRADE) {
+      rightIndex = middleIndex - 1;
+    } else {
+      leftIndex = middleIndex + 1;
     }
   }
 
