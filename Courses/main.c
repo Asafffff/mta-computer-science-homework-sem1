@@ -1,12 +1,11 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h> // FIXME: remove
 #include <stdlib.h>
 #include <string.h>
 #define SEMESTER_A 'A'
 #define SEMESTER_B 'B'
-#define NUMBER_OF_STUDENTS_IN_A_GROUP 3 // TODO Change to 6
-#define MAXIMUM_OF_NUMBER_GRADES_IN_TABLE 5
+#define NUMBER_OF_STUDENTS_IN_A_GROUP 6
+#define MAXIMUM_OF_NUMBER_GRADES_IN_TABLE 7
 #define MAXIMUM_STUDENT_NAME_LENGTH 21
 #define MAXIMUM_GROUP_NAME_LENGTH 6
 #define MAXIMUM_NUMBER_OF_COURSES 10
@@ -43,8 +42,11 @@ void deleteNamesWithLexAndPrintThem(char studentNames[][MAXIMUM_GROUP_NAME_LENGT
 void getStudentGradesByCourseNumberAndPrintThem(STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN_A_GROUP],
                                                 int numberOfSubGroups, int numberOfStudents, int courseNumber,
                                                 int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE]);
-void searchMaximumGradePerGroup(int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE], int numberOfSubGroups,
-                                int maximumNumberOfGradesInTable);
+void searchMaximumGradePerGroup(int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE], int numberOfSubGroups);
+bool isStringHasLex(char string[]);
+void shiftStringArrayLeft(char array[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH], int arraySize,
+                          int offset);
+void resetStringToEmptyChars(char string[], int stringSize);
 
 int main() {
   const int numberOfSubGroups = 3, numberOfStudentsInAGroup = NUMBER_OF_STUDENTS_IN_A_GROUP;
@@ -66,12 +68,12 @@ int main() {
   switchNamesWithLoisToLaneAndPrintThem(studentNames, numberOfStudentsInCourse);
   deleteNamesWithLexAndPrintThem(studentNames, numberOfStudentsInCourse);
 
-  printf("\nGrades in course #%d\n", courseNumber);
+  printf("\nGrades in course#%d:\n", courseNumber);
   getStudentGradesByCourseNumberAndPrintThem(groupOfGroupsOfStudents, numberOfSubGroups, numberOfStudentsInAGroup,
                                              courseNumber, studentGrades);
 
-  printf("\nMaximum grades in course #%d\n", courseNumber);
-  searchMaximumGradePerGroup(studentGrades, numberOfSubGroups, MAXIMUM_OF_NUMBER_GRADES_IN_TABLE);
+  printf("\nMaximum grades in course#%d:\n", courseNumber);
+  searchMaximumGradePerGroup(studentGrades, numberOfSubGroups);
 
   return 0;
 }
@@ -84,7 +86,7 @@ void printWelcomeMessage() {
 
 void getCourseInfo(COURSE_INFO semesterCoursesInfo[], int numberOfCourses) {
   for (int i = 0; i < numberOfCourses; i++) {
-    printf("Enter course number and grade: ");
+    printf("Enter Course number and grade: ");
     scanf("%d %d", &semesterCoursesInfo[i].courseNumber, &semesterCoursesInfo[i].grade);
   }
 }
@@ -108,7 +110,7 @@ void addStudentsToGroups(STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN
     groupName = getGroupNameByIndex(i);
 
     printf("Enter students data for GROUP %c:\n", groupName);
-    printf("---------------------------------\n");
+    printf("________________________________\n");
 
     // Loop through students of sub groups
     for (j = 0; j < numberOfStudents; j++) {
@@ -119,79 +121,78 @@ void addStudentsToGroups(STUDENT groupOfGroupsOfStudents[][NUMBER_OF_STUDENTS_IN
 
 STUDENT getStudentInfoFromInput() {
   // FIXME - Remove
-  int r = rand() % 5;
-  STUDENT student = {
-      .fullName = "Lois Noir",
-      .identityNumber = 0,
-      .numberOfCoursesInSemesterA = 1,
-      .courseInfo[0].courseNumber = 10,
-      .courseInfo[0].grade = 10,
-  };
+  // int r = rand() % 5;
+  // STUDENT student = {
+  //     .fullName = "Lois Noir",
+  //     .identityNumber = 0,
+  //     .numberOfCoursesInSemesterA = 1,
+  //     .courseInfo[0].courseNumber = 10,
+  //     .courseInfo[0].grade = 10,
+  // };
 
-  STUDENT student2 = {
-      .fullName = "Gur Lex",
-      .identityNumber = 1,
-      .numberOfCoursesInSemesterA = 1,
-      .courseInfo[0].courseNumber = 10,
-      .courseInfo[0].grade = 20,
-  };
+  // STUDENT student2 = {
+  //     .fullName = "Gur Lex",
+  //     .identityNumber = 1,
+  //     .numberOfCoursesInSemesterA = 1,
+  //     .courseInfo[0].courseNumber = 10,
+  //     .courseInfo[0].grade = 20,
+  // };
 
-  STUDENT student3 = {
-      .fullName = "Natali Mor",
-      .identityNumber = 2,
-      .numberOfCoursesInSemesterA = 1,
-      .courseInfo[0].courseNumber = 10,
-      .courseInfo[0].grade = 30,
-  };
+  // STUDENT student3 = {
+  //     .fullName = "Natali Mor",
+  //     .identityNumber = 2,
+  //     .numberOfCoursesInSemesterA = 1,
+  //     .courseInfo[0].courseNumber = 10,
+  //     .courseInfo[0].grade = 30,
+  // };
 
-  STUDENT student4 = {
-      .fullName = "Amit Gurevich",
-      .identityNumber = 3,
-      .numberOfCoursesInSemesterA = 1,
-      .courseInfo[0].courseNumber = 10,
-      .courseInfo[0].grade = 50,
-  };
+  // STUDENT student4 = {
+  //     .fullName = "Amit Gurevich",
+  //     .identityNumber = 3,
+  //     .numberOfCoursesInSemesterA = 1,
+  //     .courseInfo[0].courseNumber = 10,
+  //     .courseInfo[0].grade = 50,
+  // };
 
-  STUDENT student5 = {
-      .fullName = "Lois Lois",
-      .identityNumber = 4,
-      .numberOfCoursesInSemesterA = 1,
-      .courseInfo[0].courseNumber = 10,
-      .courseInfo[0].grade = 40,
-  };
+  // STUDENT student5 = {
+  //     .fullName = "Lois Lois",
+  //     .identityNumber = 4,
+  //     .numberOfCoursesInSemesterA = 1,
+  //     .courseInfo[0].courseNumber = 10,
+  //     .courseInfo[0].grade = 40,
+  // };
 
-  switch (r) {
-    case 0:
-      return student;
-    case 1:
-      return student2;
-    case 2:
-      return student3;
-    case 3:
-      return student4;
-    case 4:
-      return student5;
-    default:
-      return student;
-  }
-  // STUDENT student;
-  // char firstName[(int)MAXIMUM_STUDENT_NAME_LENGTH / 2], lastName[(int)MAXIMUM_STUDENT_NAME_LENGTH / 2];
+  // switch (r) {
+  //   case 0:
+  //     return student;
+  //   case 1:
+  //     return student2;
+  //   case 2:
+  //     return student3;
+  //   case 3:
+  //     return student4;
+  //   case 4:
+  //     return student5;
+  //   default:
+  //     return student;
+  // }
+  STUDENT student;
+  char firstName[(int)MAXIMUM_STUDENT_NAME_LENGTH / 2], lastName[(int)MAXIMUM_STUDENT_NAME_LENGTH / 2];
 
-  // printf("Enter student first name and last name (seperated by spaces): ");
-  // scanf("%s %s", firstName, lastName);
+  printf("\nEnter student first name and last name (seperated by spaces): ");
+  scanf("%s %s", firstName, lastName);
 
-  // strcat(firstName, " ");
-  // strcat(firstName, lastName);
-  // strcpy(student.fullName, firstName);
+  strcat(firstName, " ");
+  strcat(firstName, lastName);
+  strcpy(student.fullName, firstName);
 
-  // printf("Enter student ID: ");
-  // scanf("%d", &student.identityNumber);
+  printf("Enter student ID: ");
+  scanf("%d", &student.identityNumber);
 
-  // printf("Enter number of courses taken in semester A: ");
-  // scanf("%d", &student.numberOfCoursesInSemesterA);
+  printf("\nEnter number of courses taken in semester A: ");
+  scanf("%d", &student.numberOfCoursesInSemesterA);
 
-  // getCourseInfo(student.courseInfo, student.numberOfCoursesInSemesterA);
-  // printf("\n");
+  getCourseInfo(student.courseInfo, student.numberOfCoursesInSemesterA);
 
   return student;
 }
@@ -209,10 +210,8 @@ int getNumberOfStudentNamesByCourseNumberAndPrintThem(
     currentGroupName = getGroupNameByIndex(i);
     fullGroupNameAsString[MAXIMUM_GROUP_NAME_LENGTH - 1] = currentGroupName;
     for (j = 0; j < numberOfStudents; j++) {
-      // Reset fullNameWithGroupPrefix to an empty string
-      for (l = 0; l < MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH; l++) {
-        fullNameWithGroupPrefix[l] = '\0';
-      }
+      resetStringToEmptyChars(fullNameWithGroupPrefix, MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH);
+
       STUDENT currentStudent = groupOfGroupsOfStudents[i][j];
       for (k = 0; k < currentStudent.numberOfCoursesInSemesterA; k++) {
         if (currentStudent.courseInfo[k].courseNumber == courseNumber) {
@@ -224,6 +223,7 @@ int getNumberOfStudentNamesByCourseNumberAndPrintThem(
 
           printf("%s\n", studentNames[studentNamesIndex]);
           studentNamesIndex++;
+          resetStringToEmptyChars(fullNameWithGroupPrefix, MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH);
         }
       }
     }
@@ -232,6 +232,14 @@ int getNumberOfStudentNamesByCourseNumberAndPrintThem(
   numberOfStudentsInCourse = studentNamesIndex;
 
   return numberOfStudentsInCourse;
+}
+
+void resetStringToEmptyChars(char string[], int stringSize) {
+  int i;
+
+  for (i = 0; i < stringSize; i++) {
+    string[i] = '\0';
+  }
 }
 
 char getGroupNameByIndex(int index) {
@@ -258,9 +266,9 @@ int getCourseNumberFromInput() {
   int courseNumber;
 
   // FIXME
-  courseNumber = 10;
-  // printf("Enter a course number: ");
-  // scanf("%d", &courseNumber);
+  // courseNumber = 10;
+  printf("\nEnter a course number: ");
+  scanf("%d", &courseNumber);
 
   return courseNumber;
 }
@@ -287,28 +295,42 @@ void switchNamesWithLoisToLaneAndPrintThem(char studentNames[][MAXIMUM_GROUP_NAM
 
 void deleteNamesWithLexAndPrintThem(char studentNames[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH],
                                     int numberOfStudents) {
-  int i, j, l, k, m;
+  int i, l, k, m;
   int numberOfDeletedNames = 0;
 
   printf("\nNames after deleting names with \"Lex\":\n");
-  for (i = 0; i < numberOfStudents; i++) {
-    for (j = 0; j < (int)(strlen(studentNames[i]) - 2); j++) {
-      if (studentNames[i][j] == 'L' && studentNames[i][j + 1] == 'e' && studentNames[i][j + 2] == 'x') {
-        for (l = i; l < numberOfStudents - 1; l++) {
-          strcpy(studentNames[l], studentNames[l + 1]);
-        }
-        numberOfDeletedNames++;
-      }
-    }
-    if (i < numberOfStudents - numberOfDeletedNames) {
-      printf("%s\n", studentNames[i]);
+
+  for (i = 0; i < numberOfStudents - numberOfDeletedNames; i++) {
+    if (isStringHasLex(studentNames[i])) {
+      shiftStringArrayLeft(studentNames, numberOfStudents, i);
+      numberOfDeletedNames++;
+      i -= 1;
     }
   }
 
-  for (k = 0; k < numberOfDeletedNames; k++) {
-    for (m = 0; m < MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH; m++) {
-      studentNames[numberOfStudents - 1 - k][m] = '\0';
+  for (i = 0; i < numberOfStudents - numberOfDeletedNames; i++) {
+    printf("%s\n", studentNames[i]);
+  }
+}
+
+bool isStringHasLex(char string[]) {
+  int i = 0;
+
+  for (i = 0; i < strlen(string); i++) {
+    if (string[i] == 'L' && string[i + 1] == 'e' && string[i + 2] == 'x') {
+      return true;
     }
+  }
+
+  return false;
+}
+
+void shiftStringArrayLeft(char array[][MAXIMUM_GROUP_NAME_LENGTH + MAXIMUM_STUDENT_NAME_LENGTH], int arraySize,
+                          int offset) {
+  int i = 0;
+
+  for (i = offset; i < arraySize - 1; i++) {
+    strcpy(array[i], array[i + 1]);
   }
 }
 
@@ -340,26 +362,33 @@ void getStudentGradesByCourseNumberAndPrintThem(STUDENT groupOfGroupsOfStudents[
   }
 }
 
-void searchMaximumGradePerGroup(int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE], int numberOfSubGroups,
-                                int maximumNumberOfGradesInTable) {
+void searchMaximumGradePerGroup(int studentGrades[][MAXIMUM_OF_NUMBER_GRADES_IN_TABLE], int numberOfSubGroups) {
   int i, j;
-  int firstMaximumGrade;
-  int secondMaximumGrade;
+  int firstMaximumGrade = -1, secondMaximumGrade = -1;
+  int maximumNumberOfGradesInGroup;
   char currentGroupName;
 
   for (i = 0; i < numberOfSubGroups; i++) {
     currentGroupName = getGroupNameByIndex(i);
     firstMaximumGrade = -1;
+    maximumNumberOfGradesInGroup = studentGrades[i][0];
 
-    for (j = 0; j < maximumNumberOfGradesInTable; j++) {
+    for (j = 1; j <= maximumNumberOfGradesInGroup; j++) {
       if (studentGrades[i][j] > firstMaximumGrade) {
         secondMaximumGrade = firstMaximumGrade;
         firstMaximumGrade = studentGrades[i][j];
-      } else if (studentGrades[i][j] < firstMaximumGrade && studentGrades[i][j] > secondMaximumGrade) {
+      } else if (studentGrades[i][j] <= firstMaximumGrade && studentGrades[i][j] > secondMaximumGrade) {
         secondMaximumGrade = studentGrades[i][j];
       }
     }
-    printf("Group%c: max grade is: %d and second max is: %d\n", currentGroupName, firstMaximumGrade,
-           secondMaximumGrade);
+
+    if (firstMaximumGrade != -1 && secondMaximumGrade != -1) {
+      printf("Group%c: max grade is: %d and second max is: %d\n", currentGroupName, firstMaximumGrade,
+             secondMaximumGrade);
+    } else if (firstMaximumGrade != -1 && secondMaximumGrade == -1) {
+      printf("Group%c: max grade is: %d (no second max found)\n", currentGroupName, firstMaximumGrade);
+    } else {
+      printf("Group%c: no grades found in group\n", currentGroupName);
+    }
   }
 }
