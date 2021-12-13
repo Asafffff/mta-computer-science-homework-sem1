@@ -7,7 +7,20 @@
 #define FUNC_COUNT 9
 #define EXIT 0
 
+// Custom defines
+#define ASCII_NUM_ZERO 48
+#define END_OF_STRING_CHAR '\0'
+
 // Add your recursive functions declarations here
+bool isEven(int num, int digit);
+int howManyPaths(int x, int y);
+int biggestLowPower(int x, int num);
+int partSum(int num);
+void intToStr(int num, char s[]);
+void fillMaxPrefixesArray(int numbers[], int n, int maxPrefixesArray[]);
+void getMinToStart(int numbers[], int n);
+void combineArrays(int sortedArr1[], int size1, int sortedArr2[], int size2);
+int countSmaller(int arr[], int start, int end, int num);
 
 // Testing functions
 int readArray(int data[], int maxSize);
@@ -226,3 +239,182 @@ void swap(int arr[], int i, int j) {
 
 /******************************* Recursive functions **************************/
 // Add recursive functions implementation here
+
+bool isEven(int num, int digit) {
+  int lastDigit, numWithoutLastDigit;
+
+  if (num == 0) {
+    return true;
+  }
+
+  lastDigit = num % 10;
+  numWithoutLastDigit = num / 10;
+
+  if (digit == lastDigit) {
+    return !isEven(numWithoutLastDigit, digit);
+  } else {
+    return isEven(numWithoutLastDigit, digit);
+  }
+}
+
+int howManyPaths(int x, int y) {
+  if (y == 0 || x == 0) {
+    return 1;
+  }
+
+  return howManyPaths(x - 1, y) + howManyPaths(x, y - 1);
+}
+
+int biggestLowPower(int x, int num) {
+  if (num / x == 0) {
+    return 1;
+  }
+
+  return biggestLowPower(x, num / x) * x;
+}
+
+int partSum(int num) {
+  int firstDigit, i = 0;
+  int modifiedNum = num;
+  int powersOfTenResult = 1;
+  int firstDigitByPowersOfTen;
+
+  // Stop condition
+  if (num / 10 == 0) {
+    return 0;
+  }
+
+  // Modify the original number until we are able to get its first digit
+  while (modifiedNum > 9) {
+    modifiedNum /= 10;
+    i++;
+  }
+  firstDigit = modifiedNum;
+
+  // Calculate the power of tens we need to remove from the original number. For example, If the number is 2453,
+  // and we need to remove the first digit, we need to remove 2000 from the number, or in other words - (2 * 10^i)
+  while (i > 0) {
+    powersOfTenResult *= 10;
+    i--;
+  }
+
+  firstDigitByPowersOfTen = firstDigit * powersOfTenResult;
+
+  return partSum(num - firstDigitByPowersOfTen) + firstDigit;
+}
+
+void intToStr(int num, char s[]) {
+  int lastDigit = num % 10;
+  char lastDigitInAscii = lastDigit + ASCII_NUM_ZERO;
+
+  int i = 0;
+
+  // Initialize first char of the string to our last digit, and mark the end of the string.
+  if (num / 10 == 0) {
+    s[0] = lastDigitInAscii;
+    s[1] = END_OF_STRING_CHAR;
+    return;
+  }
+
+  intToStr(num / 10, s);
+
+  // Add sequent lastDigit to the end of the string
+  while (true) {
+    if (s[i] == END_OF_STRING_CHAR) {
+      s[i] = lastDigitInAscii;
+      s[i + 1] = END_OF_STRING_CHAR;
+      break;
+    }
+    i++;
+  }
+}
+
+void fillMaxPrefixesArray(int numbers[], int n, int maxPrefixesArray[]) {
+  int lastNumber;
+  int lastNumberInResultArray;
+
+  if (n == 1) {
+    maxPrefixesArray[0] = numbers[0];
+    return;
+  }
+
+  fillMaxPrefixesArray(numbers, n - 1, maxPrefixesArray);
+
+  // If last number of 'maxPrefixesArray' is >= last number of 'numbers', assign it as the next number of
+  // 'maxPrefixesArray', otherwise, assign the last number of 'numbers' as the next number of 'maxPrefixesArray'
+  lastNumber = numbers[n - 1];
+  lastNumberInResultArray = maxPrefixesArray[n - 2];
+  if (lastNumberInResultArray >= lastNumber) {
+    maxPrefixesArray[n - 1] = lastNumberInResultArray;
+  } else {
+    maxPrefixesArray[n - 1] = lastNumber;
+  }
+}
+
+void getMinToStart(int numbers[], int n) {
+  int tempNum;
+
+  if (n == 1) {
+    return;
+  }
+
+  if (numbers[n - 1] < numbers[n - 2]) {
+    tempNum = numbers[n - 2];
+    numbers[n - 2] = numbers[n - 1];
+    numbers[n - 1] = tempNum;
+  }
+
+  getMinToStart(numbers, n - 1);
+}
+
+void combineArrays(int sortedArr1[], int size1, int sortedArr2[], int size2) {
+  int i, lastNumberArr1, lastNumberArr2;
+  int totalSize = size1 + size2;
+
+  if (size1 == 0 || size2 == 0) {
+    if (size2 == 0 && size1 != 0) {
+      for (i = 0; i < size1; i++) {
+        sortedArr2[i] = sortedArr1[i];
+      }
+    }
+    return;
+  }
+
+  lastNumberArr1 = sortedArr1[size1 - 1];
+  lastNumberArr2 = sortedArr2[size2 - 1];
+
+  if (lastNumberArr1 >= lastNumberArr2) {
+    sortedArr2[totalSize - 1] = lastNumberArr1;
+    combineArrays(sortedArr1, size1 - 1, sortedArr2, size2);
+  } else if (lastNumberArr1 < lastNumberArr2) {
+    sortedArr2[totalSize - 1] = lastNumberArr2;
+    combineArrays(sortedArr1, size1, sortedArr2, size2 - 1);
+  }
+}
+
+int countSmaller(int arr[], int start, int end, int num) {
+  int middle = (end + start) / 2;
+  int middleNumber = arr[middle];
+  int firstNumber = arr[start];
+  int lastNumber = arr[end];
+
+  if (num > lastNumber) {
+    return end + 1;
+  }
+
+  if (middle == start) {
+    if (middleNumber < num) {
+      return middle + 1;
+    } else {
+      return middle;
+    }
+  }
+
+  if (num == middleNumber) {
+    return middle;
+  } else if (num > middleNumber) {
+    return countSmaller(arr, middle, end, num);
+  } else if (num < middleNumber) {
+    return countSmaller(arr, start, middle, num);
+  }
+}
