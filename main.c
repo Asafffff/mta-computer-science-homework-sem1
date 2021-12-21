@@ -40,6 +40,15 @@
 #define YELLOW 3
 #define YELLOW_STRING "Y"
 
+struct GameSettings {
+  bool isGameOver;
+  bool isStopNextPlayerTurn;
+  bool isRoundDirectionClockwise;
+  int numberOfPlayers;
+  int withdrawnCardsStatistics[NUMBER_OF_UNIQUE_CARD_VALUES];
+};
+typedef struct GameSettings GameSettings;
+
 struct Card {
   int value;
   int color;
@@ -76,24 +85,23 @@ void printCardWithInnerTextValue(char innerText[], int cardWidth);
 int mapStupidUnorderedChangeColorResults(int unorderedColorValue);
 void executeChangeColor(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr);
 void printPlayerCards(PLAYER player);
-PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr);
+PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
 void removeCardFromPlayerDeck(PLAYER* player, int cardIndex);
 bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr);
 void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr);
-void withdrawCardFromDeck(PLAYER* player);
-PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr);
+void withdrawCardFromDeck(PLAYER* player, GameSettings* globalGameSettings);
+PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
 int getPlayerActionChoice();
-int getIndexOfNextPlayer(int currentPlayerIndex, int numberOfPlayers);
-void buildGameStatistics(CARD_STATISTICS orderedWithdrawnCardsStatistics[]);
+int getIndexOfNextPlayer(int currentPlayerIndex, GameSettings* globalGameSettings);
+void buildGameStatistics(int withdrawnCardsStatistics[], CARD_STATISTICS orderedWithdrawnCardsStatistics[]);
 void printGameStatistics(CARD_STATISTICS orderedWithdrawnCardsStatistics[]);
 
-bool isStopNextPlayerTurn = false;
-bool isRoundDirectionClockwise = true;
-int withdrawnCardsStatistics[NUMBER_OF_UNIQUE_CARD_VALUES] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
 void main() {
-  int numberOfPlayers;
-  bool isGameOver = false;
+  GameSettings globalGameSettings = {.isGameOver = false,
+                                     .isStopNextPlayerTurn = false,
+                                     .isRoundDirectionClockwise = true,
+                                     .numberOfPlayers = 0,
+                                     .withdrawnCardsStatistics = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
   CARD heapUpperCard;
   CARD openingCard;
   int orderedWithdrawnCardsStatistics[NUMBER_OF_UNIQUE_CARD_VALUES];
@@ -101,25 +109,25 @@ void main() {
   srand(time(NULL));
 
   printWelcomeMessage();
-  numberOfPlayers = getNumberOfPlayersFromInput();
+  globalGameSettings.numberOfPlayers = getNumberOfPlayersFromInput();
 
-  PLAYER players[numberOfPlayers];
+  PLAYER players[globalGameSettings.numberOfPlayers];
 
-  initPlayersByNumberOfPlayers(players, numberOfPlayers);
+  initPlayersByNumberOfPlayers(players, globalGameSettings.numberOfPlayers);
 
   heapUpperCard = getOpeningCard();
 
   int currentPlayerIndex = UNINITIALIZED_PLAYER_INDEX;
-  while (!isGameOver) {
-    currentPlayerIndex = getIndexOfNextPlayer(currentPlayerIndex, numberOfPlayers);
+  while (!globalGameSettings.isGameOver) {
+    currentPlayerIndex = getIndexOfNextPlayer(currentPlayerIndex, &globalGameSettings);
 
     printHeapUpperCard(heapUpperCard);
 
     PLAYER player = players[currentPlayerIndex];
-    player = playerPlayTurn(player, &heapUpperCard);
+    player = playerPlayTurn(player, &heapUpperCard, &globalGameSettings);
 
     if (player.numberOfCards == 0) {
-      isGameOver = true;
+      globalGameSettings.isGameOver = true;
       printf("The winner is... %s! Congratulations!\n", player.firstName);
       break;
     }
@@ -127,7 +135,7 @@ void main() {
     players[currentPlayerIndex] = player;
   }
 
-  buildGameStatistics(orderedWithdrawnCardsStatistics);
+  buildGameStatistics(globalGameSettings.withdrawnCardsStatistics, orderedWithdrawnCardsStatistics);
   printGameStatistics(orderedWithdrawnCardsStatistics);
 }
 
@@ -518,11 +526,11 @@ void printPlayerCards(PLAYER player) {
 void removeCardFromPlayerDeck(PLAYER* player, int cardIndex) {
   int i;
 
-  for (i = cardIndex; i < (*player).numberOfCards; i++) {
-    (*player).cards[i] = (*player).cards[i + 1];
+  for (i = cardIndex; i < player->numberOfCards; i++) {
+    player->cards[i] = player->cards[i + 1];
   }
 
-  (*player).numberOfCards -= 1;
+  player->numberOfCards -= 1;
   return;
 }
 
@@ -533,7 +541,7 @@ void removeCardFromPlayerDeck(PLAYER* player, int cardIndex) {
  * @param heapUpperCardPtr Pointer to the upper card of the game's heap
  * @return PLAYER modified player after the turn
  */
-PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr) {
+PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
   int playerActionChoice, cardIndex;
   CARD withdrawnCard, playerCard;
 
@@ -543,10 +551,10 @@ PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr) {
   playerActionChoice = getPlayerActionChoice(player.numberOfCards);
 
   if (playerActionChoice == ACTION_WITHDRAW_FROM_DECK) {
-    withdrawCardFromDeck(&player);
+    withdrawCardFromDeck(&player, globalGameSettings);
   } else {
     cardIndex = playerActionChoice - 1;
-    player = executeCardAction(player, cardIndex, heapUpperCardPtr);
+    player = executeCardAction(player, cardIndex, heapUpperCardPtr, globalGameSettings);
   }
 
   return player;
@@ -620,7 +628,7 @@ void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
 bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr) {
   // FIXME
   return true;
-  return (*heapUpperCardPtr).color == chosenCard.color || (*heapUpperCardPtr).value == chosenCard.value ||
+  return heapUpperCardPtr->color == chosenCard.color || heapUpperCardPtr->value == chosenCard.value ||
          chosenCard.value == COLOR_CHANGE_CARD_VALUE;
 }
 
@@ -631,7 +639,7 @@ bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr) {
  * @param cardIndex The index of the plus card
  * @param heapUpperCardPtr Pointer to the upper card of the game's heap
  */
-void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
+void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
   int playerActionChoice, currentCardIndex;
   PLAYER currentPlayer = *player;
 
@@ -639,13 +647,15 @@ void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
 
   removeCardFromPlayerDeck(&currentPlayer, cardIndex);
 
-  playerActionChoice = getPlayerActionChoice(currentPlayer.numberOfCards);
+  if (currentPlayer.numberOfCards != 0) {
+    playerActionChoice = getPlayerActionChoice(currentPlayer.numberOfCards);
+  }
 
-  if (playerActionChoice == ACTION_WITHDRAW_FROM_DECK) {
-    withdrawCardFromDeck(&currentPlayer);
+  if (currentPlayer.numberOfCards == 0 || playerActionChoice == ACTION_WITHDRAW_FROM_DECK) {
+    withdrawCardFromDeck(&currentPlayer, globalGameSettings);
   } else {
     currentCardIndex = playerActionChoice - 2;
-    currentPlayer = executeCardAction(currentPlayer, currentCardIndex, heapUpperCardPtr);
+    currentPlayer = executeCardAction(currentPlayer, currentCardIndex, heapUpperCardPtr, globalGameSettings);
   }
 
   *heapUpperCardPtr = lastCard;
@@ -660,13 +670,13 @@ void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
  *
  * @param player The player to add the card to
  */
-void withdrawCardFromDeck(PLAYER* player) {
+void withdrawCardFromDeck(PLAYER* player, GameSettings* globalGameSettings) {
   CARD withdrawnCard;
   withdrawnCard = getRandomCard();
-  (*player).cards[(*player).numberOfCards] = withdrawnCard;
-  (*player).numberOfCards++;
+  player->cards[player->numberOfCards] = withdrawnCard;
+  player->numberOfCards++;
 
-  withdrawnCardsStatistics[withdrawnCard.value] += 1;
+  globalGameSettings->withdrawnCardsStatistics[withdrawnCard.value] += 1;
 }
 
 /**
@@ -677,7 +687,7 @@ void withdrawCardFromDeck(PLAYER* player) {
  * @param heapUpperCardPtr Pointer to the upper card of the game's heap
  * @return PLAYER modified player after the action
  */
-PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr) {
+PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
   CARD playerCard;
 
   playerCard = player.cards[cardIndex];
@@ -693,12 +703,17 @@ PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr) {
       case PLUS_CARD_VALUE:
         *heapUpperCardPtr = player.cards[cardIndex];
         removeCardFromPlayerDeck(&player, cardIndex);
-        player = playerPlayTurn(player, heapUpperCardPtr);
+        player = playerPlayTurn(player, heapUpperCardPtr, globalGameSettings);
         break;
       case STOP_CARD_VALUE:
-        isStopNextPlayerTurn = true;
+        if (globalGameSettings->numberOfPlayers == 2 && player.numberOfCards == 1) {
+          withdrawCardFromDeck(&player, globalGameSettings);
+          player.numberOfCards += 1;
+        } else {
+          globalGameSettings->isStopNextPlayerTurn = true;
+        }
       case DIRECTION_CHANGE_CARD_VALUE:
-        isRoundDirectionClockwise = !isRoundDirectionClockwise;
+        globalGameSettings->isRoundDirectionClockwise = !globalGameSettings->isRoundDirectionClockwise;
       default:
         *heapUpperCardPtr = player.cards[cardIndex];
         removeCardFromPlayerDeck(&player, cardIndex);
@@ -745,18 +760,18 @@ int getPlayerActionChoice(int numberOfCards) {
  * @param numberOfPlayers Number of players in the game
  * @return int Index of the next player
  */
-int getIndexOfNextPlayer(int currentPlayerIndex, int numberOfPlayers) {
+int getIndexOfNextPlayer(int currentPlayerIndex, GameSettings* globalGameSettings) {
   int nextPlayerIndex = currentPlayerIndex;
-  int indexToAdd = isRoundDirectionClockwise ? 1 : numberOfPlayers - 1;
+  int indexToAdd = globalGameSettings->isRoundDirectionClockwise ? 1 : globalGameSettings->numberOfPlayers - 1;
 
-  if (isStopNextPlayerTurn) {
-    isStopNextPlayerTurn = false;
+  if (globalGameSettings->isStopNextPlayerTurn) {
+    globalGameSettings->isStopNextPlayerTurn = false;
     nextPlayerIndex += indexToAdd;
   }
 
   nextPlayerIndex += indexToAdd;
 
-  return (nextPlayerIndex % numberOfPlayers);
+  return (nextPlayerIndex % globalGameSettings->numberOfPlayers);
 }
 
 /**
@@ -770,7 +785,7 @@ void printHeapUpperCard(CARD heapUpperCard) {
   printf("\n");
 }
 
-void buildGameStatistics(CARD_STATISTICS orderedWithdrawnCardsStatistics[]) {
+void buildGameStatistics(int withdrawnCardsStatistics[], CARD_STATISTICS orderedWithdrawnCardsStatistics[]) {
   int i;
   char cardValueInText[CARD_MAX_STRING_LENGTH];
   CARD fakeCardValue;
