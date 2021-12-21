@@ -12,8 +12,7 @@
 #define ACTION_FINISH_OPEN_TAKI 0
 
 /* Card Properties */
-#define INITIAL_NUMBER_OF_CARDS 2 // FIXME Revert to 4
-#define MAX_NUMBER_OF_CARDS 20
+#define INITIAL_NUMBER_OF_CARDS 4
 #define CARD_MAX_STRING_LENGTH 6
 #define NUMBER_OF_UNIQUE_CARD_VALUES 14
 #define NUMBER_OF_UNIQUE_CARD_COLORS 4
@@ -63,7 +62,7 @@ typedef struct CardStatistics CARD_STATISTICS;
 
 struct Player {
   char firstName[FIRST_NAME_MAX_LENGTH];
-  CARD cards[MAX_NUMBER_OF_CARDS];
+  CARD* cards;
   int numberOfCards;
 };
 typedef struct Player PLAYER;
@@ -92,9 +91,13 @@ void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr);
 void withdrawCardFromDeck(PLAYER* player, GameSettings* globalGameSettings);
 PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
 int getPlayerActionChoice();
+void bubbleSort(CARD_STATISTICS orderedWithdrawnCardsStatistics[], int numberOfCards);
+void printHeapUpperCard(CARD heapUpperCard);
 int getIndexOfNextPlayer(int currentPlayerIndex, GameSettings* globalGameSettings);
 void buildGameStatistics(int withdrawnCardsStatistics[], CARD_STATISTICS orderedWithdrawnCardsStatistics[]);
 void printGameStatistics(CARD_STATISTICS orderedWithdrawnCardsStatistics[]);
+void checkAlloc(CARD* pointer);
+void* customRealloc(CARD* oldArray, int currentSize, int newSize);
 
 void main() {
   GameSettings globalGameSettings = {.isGameOver = false,
@@ -104,7 +107,7 @@ void main() {
                                      .withdrawnCardsStatistics = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
   CARD heapUpperCard;
   CARD openingCard;
-  int orderedWithdrawnCardsStatistics[NUMBER_OF_UNIQUE_CARD_VALUES];
+  CARD_STATISTICS orderedWithdrawnCardsStatistics[NUMBER_OF_UNIQUE_CARD_VALUES];
 
   srand(time(NULL));
 
@@ -133,6 +136,10 @@ void main() {
     }
 
     players[currentPlayerIndex] = player;
+  }
+
+  for (int i = 0; i < globalGameSettings.numberOfPlayers; i++) {
+    free(players[i].cards);
   }
 
   buildGameStatistics(globalGameSettings.withdrawnCardsStatistics, orderedWithdrawnCardsStatistics);
@@ -200,19 +207,23 @@ PLAYER getPlayerFirstNameFromInput(PLAYER player, int playerNumber) {
  */
 PLAYER initPlayerCards(PLAYER player) {
   int i;
-  CARD card;
+  CARD *cards, card;
+  cards = (CARD*)malloc(INITIAL_NUMBER_OF_CARDS * sizeof(CARD));
+  checkAlloc(cards);
 
   for (i = 0; i < INITIAL_NUMBER_OF_CARDS; i++) {
     card = getRandomCard();
-    player.cards[i] = card;
+    cards[i] = card;
   }
+
+  player.cards = cards;
   player.numberOfCards = INITIAL_NUMBER_OF_CARDS;
 
   return player;
 }
 
 /**
- * @brief Get a predefined card for debuggin purposes
+ * @brief Get a predefined card for debugging purposes
  *
  * @return CARD
  */
@@ -526,9 +537,11 @@ void printPlayerCards(PLAYER player) {
 void removeCardFromPlayerDeck(PLAYER* player, int cardIndex) {
   int i;
 
-  for (i = cardIndex; i < player->numberOfCards; i++) {
+  for (i = cardIndex; i < player->numberOfCards - 1; i++) {
     player->cards[i] = player->cards[i + 1];
   }
+
+  player->cards = customRealloc(player->cards, player->numberOfCards, player->numberOfCards - 1);
 
   player->numberOfCards -= 1;
   return;
@@ -590,29 +603,27 @@ int getOpenTakiPlayerChoice(int numberOfCards) {
  * @param heapUpperCardPtr Pointer to the upper card of the game's heap
  */
 void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
-  PLAYER currentPlayer = *player;
   int playerActionChoice, currentCardIndex;
-  CARD lastCard = currentPlayer.cards[cardIndex];
+  CARD lastCard = player->cards[cardIndex];
 
-  removeCardFromPlayerDeck(&currentPlayer, cardIndex);
+  removeCardFromPlayerDeck(player, cardIndex);
 
-  playerActionChoice = getOpenTakiPlayerChoice(currentPlayer.numberOfCards);
+  playerActionChoice = getOpenTakiPlayerChoice(player->numberOfCards);
 
   while (playerActionChoice != ACTION_FINISH_OPEN_TAKI) {
     currentCardIndex = playerActionChoice - 1;
-    if (isValidNextCard(currentPlayer.cards[currentCardIndex], heapUpperCardPtr)) {
-      lastCard = currentPlayer.cards[currentCardIndex];
-      removeCardFromPlayerDeck(&currentPlayer, currentCardIndex);
-      printPlayerCards(currentPlayer);
+    if (isValidNextCard(player->cards[currentCardIndex], heapUpperCardPtr)) {
+      lastCard = player->cards[currentCardIndex];
+      removeCardFromPlayerDeck(player, currentCardIndex);
+      printPlayerCards(*player);
     } else {
       printf("ERROR: The card you chose is not valid. Please try again.\n");
     }
 
-    playerActionChoice = getOpenTakiPlayerChoice(currentPlayer.numberOfCards);
+    playerActionChoice = getOpenTakiPlayerChoice(player->numberOfCards);
   }
 
   *heapUpperCardPtr = lastCard;
-  *player = currentPlayer;
 
   return;
 }
@@ -626,7 +637,7 @@ void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
  * @return false If the card is not valid
  */
 bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr) {
-  // FIXME
+  // FIXME - remove this
   return true;
   return heapUpperCardPtr->color == chosenCard.color || heapUpperCardPtr->value == chosenCard.value ||
          chosenCard.value == COLOR_CHANGE_CARD_VALUE;
@@ -673,6 +684,9 @@ void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, Game
 void withdrawCardFromDeck(PLAYER* player, GameSettings* globalGameSettings) {
   CARD withdrawnCard;
   withdrawnCard = getRandomCard();
+
+  player->cards = customRealloc(player->cards, player->numberOfCards, player->numberOfCards + 1);
+
   player->cards[player->numberOfCards] = withdrawnCard;
   player->numberOfCards++;
 
@@ -833,4 +847,26 @@ void bubbleSort(CARD_STATISTICS orderedWithdrawnCardsStatistics[], int numberOfC
       }
     }
   }
+}
+
+void checkAlloc(CARD* pointer) {
+  if (pointer == NULL) {
+    exit(1);
+  }
+}
+
+void* customRealloc(CARD* oldArray, int currentSize, int newSize) {
+  int i;
+  CARD* newArray = NULL;
+
+  newArray = (CARD*)malloc(newSize * sizeof(CARD));
+  checkAlloc(newArray);
+
+  for (i = 0; i < currentSize && i < newSize; i++) {
+    newArray[i] = oldArray[i];
+  }
+
+  free(oldArray);
+
+  return newArray;
 }
