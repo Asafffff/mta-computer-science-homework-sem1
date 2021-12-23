@@ -16,6 +16,7 @@
 #define CARD_MAX_STRING_LENGTH 6
 #define NUMBER_OF_UNIQUE_CARD_VALUES 14
 #define NUMBER_OF_UNIQUE_CARD_COLORS 4
+#define RANDOM_CARD_VALUE -1
 #define TAKI_CARD "TAKI"
 #define TAKI_CARD_VALUE 0
 #define COLOR_CHANGE_CARD "COLOR"
@@ -73,7 +74,7 @@ void initPlayersByNumberOfPlayers(PLAYER players[], int numberOfPlayers);
 PLAYER getPlayerFirstNameFromInput(PLAYER player, int playerNumber);
 PLAYER initPlayerCards(PLAYER player);
 CARD getRandomCard();
-CARD getDebugCard(int value, int color);
+CARD getCardByValue(int value, int color);
 CARD getOpeningCard();
 void printCard(CARD card);
 void printCardBorder(int borderWidth);
@@ -82,13 +83,16 @@ void getCardValueInText(CARD card, char cardValueInText[]);
 void getCardColorInText(CARD card, char cardColorInText[]);
 void printCardWithInnerTextValue(char innerText[], int cardWidth);
 int mapStupidUnorderedChangeColorResults(int unorderedColorValue);
+void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
 void executeChangeColor(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr);
+void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
+void executeStopCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
+void executeChangeDirection(GameSettings* globalGameSettings);
 void printPlayerCards(PLAYER player);
 PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
 void removeCardFromPlayerDeck(PLAYER* player, int cardIndex);
 bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr);
-void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr);
-void withdrawCardFromDeck(PLAYER* player, GameSettings* globalGameSettings);
+void withdrawCardFromDeck(PLAYER* player, int cardValue, GameSettings* globalGameSettings);
 PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
 int getPlayerActionChoice();
 void bubbleSort(CARD_STATISTICS orderedWithdrawnCardsStatistics[], int numberOfCards);
@@ -138,8 +142,10 @@ void main() {
     players[currentPlayerIndex] = player;
   }
 
+  // Free the allocated memory of players cards
   for (int i = 0; i < globalGameSettings.numberOfPlayers; i++) {
     free(players[i].cards);
+    players[i].cards = NULL;
   }
 
   buildGameStatistics(globalGameSettings.withdrawnCardsStatistics, orderedWithdrawnCardsStatistics);
@@ -223,11 +229,11 @@ PLAYER initPlayerCards(PLAYER player) {
 }
 
 /**
- * @brief Get a predefined card for debugging purposes
+ * @brief Get a predefined card
  *
  * @return CARD
  */
-CARD getDebugCard(int value, int color) {
+CARD getCardByValue(int value, int color) {
   CARD card;
 
   card.value = value;
@@ -482,8 +488,7 @@ int mapStupidUnorderedChangeColorResults(int unorderedColorValue) {
  */
 void executeChangeColor(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
   int newColor;
-  PLAYER currentPlayer = *player;
-  CARD card = currentPlayer.cards[cardIndex];
+  CARD card = player->cards[cardIndex];
 
   if (card.value != COLOR_CHANGE_CARD_VALUE) {
     printf("ERROR: The card is not a color change card.\n");
@@ -507,9 +512,8 @@ void executeChangeColor(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
   card.color = mapStupidUnorderedChangeColorResults(newColor);
 
   *heapUpperCardPtr = card;
-  removeCardFromPlayerDeck(&currentPlayer, cardIndex);
+  removeCardFromPlayerDeck(player, cardIndex);
 
-  *player = currentPlayer;
   return;
 }
 
@@ -564,7 +568,7 @@ PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr, GameSettings* globa
   playerActionChoice = getPlayerActionChoice(player.numberOfCards);
 
   if (playerActionChoice == ACTION_WITHDRAW_FROM_DECK) {
-    withdrawCardFromDeck(&player, globalGameSettings);
+    withdrawCardFromDeck(&player, RANDOM_CARD_VALUE, globalGameSettings);
   } else {
     cardIndex = playerActionChoice - 1;
     player = executeCardAction(player, cardIndex, heapUpperCardPtr, globalGameSettings);
@@ -601,18 +605,27 @@ int getOpenTakiPlayerChoice(int numberOfCards) {
  * @param player The player who executes the action
  * @param cardIndex The index of the open taki card
  * @param heapUpperCardPtr Pointer to the upper card of the game's heap
+ * @param globalGameSettings Pointer to global game settings
  */
-void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
+void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
   int playerActionChoice, currentCardIndex;
   CARD lastCard = player->cards[cardIndex];
 
   removeCardFromPlayerDeck(player, cardIndex);
+  printPlayerCards(*player);
 
   playerActionChoice = getOpenTakiPlayerChoice(player->numberOfCards);
 
   while (playerActionChoice != ACTION_FINISH_OPEN_TAKI) {
     currentCardIndex = playerActionChoice - 1;
     if (isValidNextCard(player->cards[currentCardIndex], heapUpperCardPtr)) {
+      if (player->cards[currentCardIndex].value == COLOR_CHANGE_CARD_VALUE) {
+        executeChangeColor(player, currentCardIndex, heapUpperCardPtr);
+        lastCard = *heapUpperCardPtr;
+        playerActionChoice = ACTION_FINISH_OPEN_TAKI;
+        break;
+      }
+
       lastCard = player->cards[currentCardIndex];
       removeCardFromPlayerDeck(player, currentCardIndex);
       printPlayerCards(*player);
@@ -620,7 +633,20 @@ void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr) {
       printf("ERROR: The card you chose is not valid. Please try again.\n");
     }
 
-    playerActionChoice = getOpenTakiPlayerChoice(player->numberOfCards);
+    if (player->numberOfCards == 0) {
+      playerActionChoice = ACTION_FINISH_OPEN_TAKI;
+    } else {
+      playerActionChoice = getOpenTakiPlayerChoice(player->numberOfCards);
+    }
+  }
+
+  if (lastCard.value == PLUS_CARD_VALUE) {
+    withdrawCardFromDeck(player, PLUS_CARD_VALUE, globalGameSettings);
+    executePlusCard(player, player->numberOfCards - 1, heapUpperCardPtr, globalGameSettings);
+  } else if (lastCard.value == STOP_CARD_VALUE) {
+    executeStopCard(player, player->numberOfCards - 1, heapUpperCardPtr, globalGameSettings);
+  } else if (lastCard.value == DIRECTION_CHANGE_CARD_VALUE) {
+    executeChangeDirection(globalGameSettings);
   }
 
   *heapUpperCardPtr = lastCard;
@@ -644,35 +670,42 @@ bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr) {
 }
 
 /**
+ * @brief Executes the action of "Change Direction" card
+ *
+ * @param globalGameSettings Pointer to global game settings
+ */
+void executeChangeDirection(GameSettings* globalGameSettings) {
+  globalGameSettings->isRoundDirectionClockwise = !globalGameSettings->isRoundDirectionClockwise;
+}
+
+/**
+ * @brief Executes the action of "Stop" card
+ *
+ * @param player The player who executes the action
+ * @param cardIndex The index of the plus card
+ * @param heapUpperCardPtr Pointer to the upper card of the game's heap
+ * @param globalGameSettings Pointer to global game settings
+ */
+void executeStopCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
+  if (globalGameSettings->numberOfPlayers == 2 && player->numberOfCards == 1) {
+    withdrawCardFromDeck(player, RANDOM_CARD_VALUE, globalGameSettings);
+  } else {
+    globalGameSettings->isStopNextPlayerTurn = true;
+  }
+}
+
+/**
  * @brief Executes the action of "Plus" card
  *
  * @param player The player who executes the action
  * @param cardIndex The index of the plus card
  * @param heapUpperCardPtr Pointer to the upper card of the game's heap
+ * @param globalGameSettings Pointer to global game settings
  */
 void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
-  int playerActionChoice, currentCardIndex;
-  PLAYER currentPlayer = *player;
-
-  CARD lastCard = currentPlayer.cards[cardIndex];
-
-  removeCardFromPlayerDeck(&currentPlayer, cardIndex);
-
-  if (currentPlayer.numberOfCards != 0) {
-    playerActionChoice = getPlayerActionChoice(currentPlayer.numberOfCards);
-  }
-
-  if (currentPlayer.numberOfCards == 0 || playerActionChoice == ACTION_WITHDRAW_FROM_DECK) {
-    withdrawCardFromDeck(&currentPlayer, globalGameSettings);
-  } else {
-    currentCardIndex = playerActionChoice - 2;
-    currentPlayer = executeCardAction(currentPlayer, currentCardIndex, heapUpperCardPtr, globalGameSettings);
-  }
-
-  *heapUpperCardPtr = lastCard;
-  *player = currentPlayer;
-
-  return;
+  *heapUpperCardPtr = player->cards[cardIndex];
+  removeCardFromPlayerDeck(player, cardIndex);
+  *player = playerPlayTurn(*player, heapUpperCardPtr, globalGameSettings);
 }
 
 /**
@@ -681,9 +714,14 @@ void executePlusCard(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, Game
  *
  * @param player The player to add the card to
  */
-void withdrawCardFromDeck(PLAYER* player, GameSettings* globalGameSettings) {
+void withdrawCardFromDeck(PLAYER* player, int cardValue, GameSettings* globalGameSettings) {
   CARD withdrawnCard;
-  withdrawnCard = getRandomCard();
+
+  if (cardValue == RANDOM_CARD_VALUE) {
+    withdrawnCard = getRandomCard();
+  } else {
+    withdrawnCard = getCardByValue(cardValue, NO_COLOR);
+  }
 
   player->cards = customRealloc(player->cards, player->numberOfCards, player->numberOfCards + 1);
 
@@ -709,25 +747,17 @@ PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, G
   if (isValidNextCard(playerCard, heapUpperCardPtr)) {
     switch (playerCard.value) {
       case TAKI_CARD_VALUE:
-        executeOpenTaki(&player, cardIndex, heapUpperCardPtr);
+        executeOpenTaki(&player, cardIndex, heapUpperCardPtr, globalGameSettings);
         break;
       case COLOR_CHANGE_CARD_VALUE:
         executeChangeColor(&player, cardIndex, heapUpperCardPtr);
         break;
       case PLUS_CARD_VALUE:
-        *heapUpperCardPtr = player.cards[cardIndex];
-        removeCardFromPlayerDeck(&player, cardIndex);
-        player = playerPlayTurn(player, heapUpperCardPtr, globalGameSettings);
-        break;
+        executePlusCard(&player, cardIndex, heapUpperCardPtr, globalGameSettings);
       case STOP_CARD_VALUE:
-        if (globalGameSettings->numberOfPlayers == 2 && player.numberOfCards == 1) {
-          withdrawCardFromDeck(&player, globalGameSettings);
-          player.numberOfCards += 1;
-        } else {
-          globalGameSettings->isStopNextPlayerTurn = true;
-        }
+        executeStopCard(&player, cardIndex, heapUpperCardPtr, globalGameSettings);
       case DIRECTION_CHANGE_CARD_VALUE:
-        globalGameSettings->isRoundDirectionClockwise = !globalGameSettings->isRoundDirectionClockwise;
+        executeChangeDirection(globalGameSettings);
       default:
         *heapUpperCardPtr = player.cards[cardIndex];
         removeCardFromPlayerDeck(&player, cardIndex);
@@ -867,6 +897,7 @@ void* customRealloc(CARD* oldArray, int currentSize, int newSize) {
   }
 
   free(oldArray);
+  oldArray = NULL;
 
   return newArray;
 }
