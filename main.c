@@ -93,9 +93,12 @@ PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr, GameSettings* globa
 void removeCardFromPlayerDeck(PLAYER* player, int cardIndex);
 bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr);
 void withdrawCardFromDeck(PLAYER* player, int cardValue, GameSettings* globalGameSettings);
-PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings);
+PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, bool* isTurnedFinishedPtr,
+                         GameSettings* globalGameSettings);
 int getPlayerActionChoice();
-void bubbleSort(CARD_STATISTICS orderedWithdrawnCardsStatistics[], int numberOfCards);
+void mergeSort(CARD_STATISTICS arr[], int size);
+void merge(CARD_STATISTICS arr1[], int size1, CARD_STATISTICS arr2[], int size2, CARD_STATISTICS resultArr[]);
+void copyCardStatisticsArrays(CARD_STATISTICS fromArr[], CARD_STATISTICS toArr[], int size);
 void printHeapUpperCard(CARD heapUpperCard);
 int getIndexOfNextPlayer(int currentPlayerIndex, GameSettings* globalGameSettings);
 void buildGameStatistics(int withdrawnCardsStatistics[], CARD_STATISTICS orderedWithdrawnCardsStatistics[]);
@@ -112,6 +115,7 @@ void main() {
   CARD heapUpperCard;
   CARD openingCard;
   CARD_STATISTICS orderedWithdrawnCardsStatistics[NUMBER_OF_UNIQUE_CARD_VALUES];
+  int i;
 
   srand(time(NULL));
 
@@ -136,14 +140,13 @@ void main() {
     if (player.numberOfCards == 0) {
       globalGameSettings.isGameOver = true;
       printf("The winner is... %s! Congratulations!\n", player.firstName);
-      break;
     }
 
     players[currentPlayerIndex] = player;
   }
 
   // Free the allocated memory of players cards
-  for (int i = 0; i < globalGameSettings.numberOfPlayers; i++) {
+  for (i = 0; i < globalGameSettings.numberOfPlayers; i++) {
     free(players[i].cards);
     players[i].cards = NULL;
   }
@@ -560,18 +563,22 @@ void removeCardFromPlayerDeck(PLAYER* player, int cardIndex) {
  */
 PLAYER playerPlayTurn(PLAYER player, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
   int playerActionChoice, cardIndex;
+  bool isTurnFinished = false;
   CARD withdrawnCard, playerCard;
 
   printf("%s's turn:\n", player.firstName);
   printPlayerCards(player);
 
-  playerActionChoice = getPlayerActionChoice(player.numberOfCards);
+  while (!isTurnFinished) {
+    playerActionChoice = getPlayerActionChoice(player.numberOfCards);
 
-  if (playerActionChoice == ACTION_WITHDRAW_FROM_DECK) {
-    withdrawCardFromDeck(&player, RANDOM_CARD_VALUE, globalGameSettings);
-  } else {
-    cardIndex = playerActionChoice - 1;
-    player = executeCardAction(player, cardIndex, heapUpperCardPtr, globalGameSettings);
+    if (playerActionChoice == ACTION_WITHDRAW_FROM_DECK) {
+      withdrawCardFromDeck(&player, RANDOM_CARD_VALUE, globalGameSettings);
+      isTurnFinished = true;
+    } else {
+      cardIndex = playerActionChoice - 1;
+      player = executeCardAction(player, cardIndex, heapUpperCardPtr, &isTurnFinished, globalGameSettings);
+    }
   }
 
   return player;
@@ -663,8 +670,6 @@ void executeOpenTaki(PLAYER* player, int cardIndex, CARD* heapUpperCardPtr, Game
  * @return false If the card is not valid
  */
 bool isValidNextCard(CARD chosenCard, CARD* heapUpperCardPtr) {
-  // FIXME - remove this
-  return true;
   return heapUpperCardPtr->color == chosenCard.color || heapUpperCardPtr->value == chosenCard.value ||
          chosenCard.value == COLOR_CHANGE_CARD_VALUE;
 }
@@ -739,7 +744,8 @@ void withdrawCardFromDeck(PLAYER* player, int cardValue, GameSettings* globalGam
  * @param heapUpperCardPtr Pointer to the upper card of the game's heap
  * @return PLAYER modified player after the action
  */
-PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, GameSettings* globalGameSettings) {
+PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, bool* isTurnedFinishedPtr,
+                         GameSettings* globalGameSettings) {
   CARD playerCard;
 
   playerCard = player.cards[cardIndex];
@@ -763,8 +769,10 @@ PLAYER executeCardAction(PLAYER player, int cardIndex, CARD* heapUpperCardPtr, G
         removeCardFromPlayerDeck(&player, cardIndex);
         break;
     }
+    *isTurnedFinishedPtr = true;
   } else {
     printf("Invalid card! Try again.\n");
+    *isTurnedFinishedPtr = false;
   }
 
   return player;
@@ -848,7 +856,7 @@ void buildGameStatistics(int withdrawnCardsStatistics[], CARD_STATISTICS ordered
     orderedWithdrawnCardsStatistics[i] = cardStatistics;
   }
 
-  bubbleSort(orderedWithdrawnCardsStatistics, NUMBER_OF_UNIQUE_CARD_VALUES);
+  mergeSort(orderedWithdrawnCardsStatistics, NUMBER_OF_UNIQUE_CARD_VALUES);
 }
 
 void printGameStatistics(CARD_STATISTICS orderedWithdrawnCardsStatistics[]) {
@@ -863,20 +871,70 @@ void printGameStatistics(CARD_STATISTICS orderedWithdrawnCardsStatistics[]) {
   }
 }
 
-void bubbleSort(CARD_STATISTICS orderedWithdrawnCardsStatistics[], int numberOfCards) {
-  int i, j;
-  CARD_STATISTICS temp;
+void merge(CARD_STATISTICS arr1[], int size1, CARD_STATISTICS arr2[], int size2, CARD_STATISTICS resultArr[]) {
+  int firstArrIndex, secondArrIndex, resultArrIndex;
 
-  for (i = 0; i < numberOfCards - 1; i++) {
-    for (j = 0; j < numberOfCards - i - 1; j++) {
-      if (orderedWithdrawnCardsStatistics[j].numberOfWithdrawals <
-          orderedWithdrawnCardsStatistics[j + 1].numberOfWithdrawals) {
-        temp = orderedWithdrawnCardsStatistics[j];
-        orderedWithdrawnCardsStatistics[j] = orderedWithdrawnCardsStatistics[j + 1];
-        orderedWithdrawnCardsStatistics[j + 1] = temp;
-      }
+  firstArrIndex = secondArrIndex = resultArrIndex = 0;
+
+  while ((firstArrIndex < size1) && (secondArrIndex < size2)) {
+    if (arr1[firstArrIndex].numberOfWithdrawals >= arr2[secondArrIndex].numberOfWithdrawals) {
+      resultArr[resultArrIndex] = arr1[firstArrIndex];
+      firstArrIndex += 1;
+    } else {
+      resultArr[resultArrIndex] = arr2[secondArrIndex];
+      secondArrIndex += 1;
     }
+    resultArrIndex += 1;
   }
+
+  while (firstArrIndex < size1) {
+    resultArr[resultArrIndex] = arr1[firstArrIndex];
+    firstArrIndex += 1;
+    resultArrIndex += 1;
+  }
+
+  while (secondArrIndex < size2) {
+    resultArr[resultArrIndex] = arr2[secondArrIndex];
+    secondArrIndex += 1;
+    resultArrIndex += 1;
+  }
+
+  return;
+}
+
+void mergeSort(CARD_STATISTICS arr[], int size) {
+  CARD_STATISTICS* tmpArr = NULL;
+  int halfSize = size / 2;
+
+  if (size <= 1) {
+    return;
+  }
+
+  mergeSort(arr, halfSize);
+  mergeSort(arr + halfSize, size - halfSize);
+
+  tmpArr = (CARD_STATISTICS*)malloc(size * sizeof(CARD_STATISTICS));
+
+  if (tmpArr == NULL) {
+    printf("ERROR! Can not allocate memory.");
+    exit(1);
+  }
+
+  merge(arr, halfSize, arr + halfSize, size - halfSize, tmpArr);
+  copyCardStatisticsArrays(tmpArr, arr, size);
+  free(tmpArr);
+
+  return;
+}
+
+void copyCardStatisticsArrays(CARD_STATISTICS fromArr[], CARD_STATISTICS toArr[], int size) {
+  int i;
+
+  for (i = 0; i < size; i++) {
+    toArr[i] = fromArr[i];
+  }
+
+  return;
 }
 
 void checkAlloc(CARD* pointer) {
